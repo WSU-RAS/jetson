@@ -138,6 +138,9 @@ Install ROS ([src](http://wiki.ros.org/lunar/Installation/Ubuntu)):
     sudo rosdep init
     rosdep update
 
+    source /opt/ros/lunar/setup.bash
+    echo "source /opt/ros/lunar/setup.bash" >> ~/.bashrc
+
 Make ROS work with Python 3:
 
     sudo apt-get install python3-empy # Errors building messages without this
@@ -191,6 +194,11 @@ Build everything:
     catkin_make -DFILTER=OFF -DCMAKE_BUILD_TYPE=Release
     catkin_make install
 
+Source this new workspace:
+
+    source ~/catkin_ws/devel/setup.bash
+    echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+
 Setup udev rules for camera, then make sure to unplug then plug back in the
 camera:
 
@@ -206,9 +214,10 @@ and measure square in meters. Mine are 0.025 m. Follow the [tutorial](http://wik
 ### Overlay Workspace
 
 Now we need to overlay a new workspace since this repository requires Python 3
-which messes up some of what we have in our previous workspace.  Download this
-repo. Note you may have some issues if you move this after initializing the
-submodules.
+which messes up some of what we have in our previous workspace.
+
+Download this repo. Note you may have some issues if you move this after
+initializing the submodules.
 
     mkdir -p ~/catkin_py3/src/
     cd ~/catkin_py3/src/
@@ -258,7 +267,11 @@ installed:
 
 However, since that'll break Python 2, let's only do it for our one package (TODO?):
 
-    echo "/usr/local/lib/python3.5/dist-packages/" >> .pth
+    echo "/usr/local/lib/python3.5/dist-packages/" >> TODO.pth
+
+Make sure you have sourced the previous workspace before building:
+
+    source ~/catkin_ws/devel/setup.bash
 
 Build everything:
 
@@ -266,6 +279,11 @@ Build everything:
     cd ~/catkin_py3
     catkin_make -DFILTER=OFF -DPYTHON_EXECUTABLE=/usr/bin/python3 -DPYTHON_VERSION=3
     catkin_make install
+
+Now that this is an overlay workspace, you can source this:
+
+    source ~/catkin_py3/devel/setup.bash
+    echo "source ~/catkin_py3/devel/setup.bash" >> ~/.bashrc
 
 ## Database Setup
 This is based on [the ROS PostgreSQL
@@ -370,7 +388,7 @@ Measure where the camera is relative to */base_link*, and then modify
 */opt/ros/kinetic/share/turtlebot_description/urdf/turtlebot_properties.urdf.xacro*
 accordingly. For us on the TurtleBot 2, these are z = 1.4224 m and x = 0.0635 m.
 
-Then, run on the NUC:
+Then, run on the NUC (TODO this was for TurtleBot 2):
 
     cd ~/catkin_ws/src
     git clone https://github.com/WSU-RAS/ras-description.git ras_description
