@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="zero_pan_tilt" pkg="object_detector_ros" type="zero_pan_tilt.py">
+    </node>
+</launch>

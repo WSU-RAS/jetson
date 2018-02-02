@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="db" default="ras" />
+    <arg name="server" default="localhost" />
+    <arg name="user" default="ras" />
+    <arg name="pass" default="ras" />
+
+    <node name="update_object_db" pkg="object_detector_ros" type="update_object_db.py">
+         <param name="db" value="$(arg db)" />
+         <param name="server" value="$(arg server)" />
+         <param name="user" value="$(arg user)" />
+         <param name="pass" value="$(arg pass)" />
+    </node>
+</launch>

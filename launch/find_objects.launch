@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- <arg name="target" default="map" /> -->
+    <!--<arg name="debug" default="False" />-->
+    <!-- TODO use above... below is just for testing -->
+
+    <!-- Note: if you change either of these, you might want to clear the
+         object
+         database since all the (x,y,z) points will now be different -->
+    <arg name="target" default="odom" />
+    <arg name="source" default="camera_depth_optical_frame" />
+    <arg name="debug" default="True" />
+
+    <node name="find_objects" pkg="object_detector_ros" type="find_objects.py">
+        <!-- for coordinate transform since we want to save locations relative
+             to the map, not the camera frame -->
+         <param name="target" value="$(arg target)" />
+         <param name="source" value="$(arg source)" />
+         <param name="debug" value="$(arg debug)" />
+    </node>
+</launch>
