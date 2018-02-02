@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <node name="zero_pan_tilt" pkg="ras_jetson" type="zero_pan_tilt.py">
-    </node>
-</launch>

@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 import rospy
 import psycopg2
-from cob_perception_msgs.msg import Object
+from ras_jetson.msg import Object
 
 class UpdateObjectDBNode:
     """
