@@ -5,10 +5,6 @@
         <arg name="publish_tf" value="false" />
     </include>
 
-    <!-- Zero the pan tilt so camera is in a good position -->
-    <include file="$(find ras_jetson)/launch/pantilt.launch" />
-    <include file="$(find ras_jetson)/launch/zero_pan_tilt.launch" />
-
     <!-- Object Detector, pick either TensorFlow or YOLO -->
     <!--<include file="$(find ras_jetson)/launch/object_detector.launch" />-->
     <include file="$(find darknet_ros)/launch/darknet_ros.launch" />
@@ -18,4 +14,11 @@
 
     <!-- Save object locations to the database -->
     <include file="$(find ras_jetson)/launch/update_object_db.launch" />
+
+    <!-- Service to query object locations from the database -->
+    <node name="object_db_service" pkg="ras_jetson" type="object_db_service.py" />
+
+    <!-- Zero the pan tilt so camera is in a good position -->
+    <include file="$(find ras_jetson)/launch/pantilt.launch" />
+    <node name="zero_pan_tilt" pkg="ras_jetson" type="zero_pan_tilt.py" />
 </launch>

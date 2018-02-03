@@ -6,7 +6,7 @@ from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import PointStamped
 import sensor_msgs.point_cloud2 as pc2
 from darknet_ros_msgs.msg import BoundingBoxes
-from cob_perception_msgs.msg import Object
+from ras_jetson.msg import Object
 
 # Coordinate transformation
 import tf2_ros
