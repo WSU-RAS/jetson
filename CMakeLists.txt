@@ -12,9 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
   cob_perception_msgs
   cv_bridge
   rospy
+  message_generation
   sensor_msgs
   std_msgs
-  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -53,17 +53,17 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   DIRECTORY
-  msg
+    msg
   FILES
-  Object.msg
+    Object.msg
 )
 
 # Generate services in the 'srv' folder
 add_service_files(
   DIRECTORY
-  srv
+    srv
   FILES
-  ObjectQuery.srv
+    ObjectQuery.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -74,10 +74,11 @@ add_service_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   cob_perception_msgs#   sensor_msgs#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+    sensor_msgs
+    std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -113,7 +114,7 @@ catkin_package(
 #  LIBRARIES ras_jetson
 #  CATKIN_DEPENDS cob_perception_msgs cv_bridge rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
-  message_runtime
+  CATKIN_DEPENDS message_runtime
 )
 
 ###########

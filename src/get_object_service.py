@@ -9,16 +9,18 @@ import rospy
 from ras_jetson.srv import ObjectQuery, ObjectQueryResponse
 
 def getObjectLocation(name):
-    rospy.wait_for_service("objectDBService")
+    rospy.wait_for_service("query_objects")
 
     try:
-        query = rospy.ServiceProxy("objectDBService", ObjectQuery)
+        query = rospy.ServiceProxy("query_objects", ObjectQuery)
         results = query(name)
         return results.locations
     except rospy.ServiceException, e:
         print "Service call failed: %s" % e
 
 if __name__ == '__main__':
+    rospy.init_node("get_object_demo")
+
     if len(sys.argv) == 2:
         name = sys.argv[1]
         print "Location of \"%s\":" % name

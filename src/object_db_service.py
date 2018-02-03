@@ -36,7 +36,7 @@ class ObjectDBService:
         """
         Respond to the request for an object's location
         """
-        rows = []
+        results = []
 
         try:
             cur = self.conn.cursor()
@@ -44,10 +44,18 @@ class ObjectDBService:
                     (req.name,))
             self.conn.commit()
             rows = cur.fetchall()
+
+            for r in rows:
+                o = Object()
+                o.name = r[0]
+                o.x = r[1]
+                o.y = r[2]
+                o.z = r[3]
+                results.append(o)
         except:
             rospy.logerr("Cannot query database")
 
-        return ObjectQueryResponse(rows)
+        return ObjectQueryResponse(results)
 
 if __name__ == '__main__':
     try:
