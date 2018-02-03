@@ -1,5 +1,14 @@
 <?xml version="1.0"?>
 <launch>
+    <!-- Start camera, but don't override model of where camera is -->
+    <include file="$(find astra_launch)/launch/astra.launch">
+        <arg name="publish_tf" value="false" />
+    </include>
+
+    <!-- Zero the pan tilt so camera is in a good position -->
+    <include file="$(find ras_jetson)/launch/pantilt.launch" />
+    <include file="$(find ras_jetson)/launch/zero_pan_tilt.launch" />
+
     <!-- Object Detector, pick either TensorFlow or YOLO -->
     <!--<include file="$(find ras_jetson)/launch/object_detector.launch" />-->
     <include file="$(find darknet_ros)/launch/darknet_ros.launch" />
@@ -9,13 +18,4 @@
 
     <!-- Save object locations to the database -->
     <include file="$(find ras_jetson)/launch/update_object_db.launch" />
-
-    <!-- Zero the pan tilt so camera is in a good position -->
-    <include file="$(find ras_jetson)/launch/pantilt.launch" />
-    <include file="$(find ras_jetson)/launch/zero_pan_tilt.launch" />
-
-    <!-- Start camera, but don't override model of where camera is -->
-    <include file="$(find astra_launch)/launch/astra.launch">
-        <arg name="publish_tf" value="false" />
-    </include>
 </launch>

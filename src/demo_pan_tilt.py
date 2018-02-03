@@ -10,14 +10,14 @@ def panTilt():
 
     while not rospy.is_shutdown():
         for i in range(100):
-            pan.publish((i-50)/100)
-            tilt.publish(i/100/2)
+            pan.publish(1.0*(i-50)/100)
+            tilt.publish(1.0*i/100/2)
             rate.sleep()
 
         for i in range(100):
             j = 100-i
-            pan.publish((j-50)/100)
-            tilt.publish(j/100/2)
+            pan.publish(1.0*(j-50)/100)
+            tilt.publish(1.0*j/100/2)
             rate.sleep()
 
 if __name__ == '__main__':

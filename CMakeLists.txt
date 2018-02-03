@@ -9,6 +9,7 @@ project(ras_jetson)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   darknet_ros_msgs
+  cob_perception_msgs
   cv_bridge
   rospy
   sensor_msgs
