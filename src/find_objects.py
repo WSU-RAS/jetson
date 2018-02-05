@@ -67,6 +67,11 @@ class FindObjectsNode:
                     self.callback_box)
             rospy.Subscriber("/object_detector", BoundingBoxes,
                     self.callback_box)
+
+            # Also listen for the human detection bounding boxes, hard coded
+            # "human" object
+            rospy.Subscriber("/human_detector", BoundingBoxes,
+                    self.callback_box)
         else:
             rospy.logerr("failed to get transform from tf2")
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 """
 Human Detector
 
@@ -87,7 +87,7 @@ class HumanDetectorNode:
 
         try:
             image_np = self.bridge.imgmsg_to_cv2(data, "bgr8")
-            boxes = processImage(image_np)
+            boxes = self.processImage(image_np)
             self.pub.publish(msgDN(data, boxes))
         except CvBridgeError as e:
             rospy.logerr(e)
