@@ -30,7 +30,7 @@ def msg(image, boxes):
     for (x, y, w, h) in boxes: 
         detection = BoundingBox()
         detection.Class = "human"
-        detection.probability = 1 # Not really... but we won't use it anyway
+        detection.probability = 1 # Not really...
         detection.xmin = x
         detection.ymin = y
         detection.xmax = x+w
@@ -49,13 +49,15 @@ class HumanDetectorNode:
     """
     def __init__(self, averageFPS=60):
         # We'll publish the results
-        self.pub = rospy.Publisher('human_detector', BoundingBoxes, queue_size=10)
+        self.pub = rospy.Publisher('human_detector', BoundingBoxes,
+                queue_size=10)
 
         # Name this node
         rospy.init_node('human_detector')
 
         # Parameters
-        camera_namespace = rospy.get_param("~camera_namespace", "/camera/rgb/image_rect_color")
+        camera_namespace = rospy.get_param("~camera_namespace",
+                "/camera/rgb/image_rect_color")
 	# Not sure if there are any other parameters we really want, e.g.
         #threshold = rospy.get_param("~scale", 1.1)
 
@@ -66,7 +68,8 @@ class HumanDetectorNode:
         self.fps = deque(maxlen=averageFPS)
 
         # Only create the subscriber after we're done loading everything
-        self.sub = rospy.Subscriber(camera_namespace, Image, self.rgb_callback, queue_size=1, buff_size=2**24)
+        self.sub = rospy.Subscriber(camera_namespace, Image, self.rgb_callback,
+                queue_size=1, buff_size=2**24)
 
         # initialize the HOG constructor
         self.hog = cv2.HOGDescriptor()
@@ -81,7 +84,6 @@ class HumanDetectorNode:
         return sum(list(self.fps))/len(self.fps)
 
     def rgb_callback(self, data):
-        #print("Object Detection frame at %s" % rospy.get_time())
         fps = time.time()
         error = ""
 
@@ -96,9 +98,8 @@ class HumanDetectorNode:
         # Print FPS
         fps = 1/(time.time() - fps)
         self.fps.append(fps)
-        print("Object Detection FPS", "{:<5}".format("%.2f"%fps),
-                "Average", "{:<5}".format("%.2f"%self.avgFPS()),
-                error)
+        print "Human Detection FPS", "{:<5}".format("%.2f"%fps),
+                "Average", "{:<5}".format("%.2f"%self.avgFPS()), error
 
     def processImage(self, frame):
 	# convert the RGB image to grayscale
