@@ -71,6 +71,7 @@ Install TensorFlow
     sudo apt install python{,3}-pip python{,3}-numpy python{,3}-matplotlib htop \
         jnettop protobuf-compiler python{,3}-pil python{,3}-lxml libxml2-dev \
         libxslt1-dev python{,3}-yaml python{,3}-docutils \
+        redis-server python{,3}-redis \
         ros-lunar-rosserial ros-lunar-rosserial-arduino
 
     pip3 install --user virtualenvwrapper
@@ -287,29 +288,6 @@ Now that this is an overlay workspace, you can source this:
 
     source ~/catkin_py3/devel/setup.bash
     echo "source ~/catkin_py3/devel/setup.bash" >> ~/.bashrc
-
-## Database Setup
-This is based on [the ROS PostgreSQL
-tutorial](http://wiki.ros.org/sql_database/Tutorials/Installing%20a%20PostgreSQL%20Server).
-Install PostgreSQL:
-
-    sudo apt install postgresql pgadmin3 python{,3}-psycopg2
-
-Add a user:
-
-    sudo su - postgres
-    psql
-    CREATE ROLE ras LOGIN CREATEDB CREATEROLE PASSWORD 'ras';
-
-Add to */etc/postgresql/9.5/main/pg_hba.conf* above all the defaults at the
-bottom, and then `sudo systemctl restart postgresql@9.5-main.service`.
-
-    # ras user can connect locally with password
-    local   all         ras                            md5
-
-To check that you can log in:
-
-    psql --username ras --password --dbname postgres
 
 ## YOLO Setup
 Copy the final weights over for YOLO into the *darknet_ros* directory:

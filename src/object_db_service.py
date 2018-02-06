@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
+import json
 import rospy
-import psycopg2
+import redis
 from ras_jetson.msg import Object
 from ras_jetson.srv import ObjectQuery, ObjectQueryResponse
 
@@ -17,17 +18,11 @@ class ObjectDBService:
         rospy.init_node('objectDBService')
 
         # Params
-        self.dbname = rospy.get_param("~db", "ras")
         self.server = rospy.get_param("~server", "localhost")
-        self.username = rospy.get_param("~user", "ras")
-        self.password = rospy.get_param("~pass", "ras")
+        self.port   = rospy.get_param("~port", "6379")
+        self.prefix = rospy.get_param("~prefix", "object")
 
-        try:
-            self.conn = psycopg2.connect(
-                    "dbname='%s' user='%s' host='localhost' password='%s'"%(
-                        self.dbname, self.username, self.password))
-        except:
-            rospy.logfatal("unable to connect to database")
+        self.redis = redis.StrictRedis(host=self.server, port=self.port, db=0)
 
         # Listen to object locations that are published
         rospy.Service("/query_objects", ObjectQuery, self.callback_object)
@@ -37,22 +32,19 @@ class ObjectDBService:
         Respond to the request for an object's location
         """
         results = []
+        data = self.redis.get(self.prefix+"_"+req.name)
 
-        try:
-            cur = self.conn.cursor()
-            cur.execute("""SELECT name, x, y, z FROM objects WHERE name = %s""",
-                    (req.name,))
-            self.conn.commit()
-            rows = cur.fetchall()
+        if data:
+            data = json.loads(data.decode("utf-8"))
 
-            for r in rows:
+            for r in data:
                 o = Object()
-                o.name = r[0]
-                o.x = r[1]
-                o.y = r[2]
-                o.z = r[3]
+                o.name = r["name"]
+                o.x = r["x"]
+                o.y = r["y"]
+                o.z = r["z"]
                 results.append(o)
-        except:
+        else:
             rospy.logerr("Cannot query database")
 
         return ObjectQueryResponse(results)

@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
+import json
 import rospy
-import psycopg2
+import redis
 from ras_jetson.msg import Object
 
 class UpdateObjectDBNode:
@@ -16,28 +17,11 @@ class UpdateObjectDBNode:
         rospy.init_node('updateObjectDB')
 
         # Params
-        self.dbname = rospy.get_param("~db", "ras")
         self.server = rospy.get_param("~server", "localhost")
-        self.username = rospy.get_param("~user", "ras")
-        self.password = rospy.get_param("~pass", "ras")
+        self.port   = rospy.get_param("~port", "6379")
+        self.prefix = rospy.get_param("~prefix", "object")
 
-        try:
-            self.conn = psycopg2.connect(
-                    "dbname='%s' user='%s' host='localhost' password='%s'"%(
-                        self.dbname, self.username, self.password))
-        except:
-            rospy.logfatal("unable to connect to database")
-
-        cur = self.conn.cursor()
-        try:
-            cur.execute("""CREATE TABLE IF NOT EXISTS objects (
-                name varchar PRIMARY KEY,
-                x double precision,
-                y double precision,
-                z double precision);""")
-            self.conn.commit()
-        except:
-            rospy.logfatal("Could not create table")
+        self.redis = redis.StrictRedis(host=self.server, port=self.port, db=0)
 
         # Listen to object locations that are published
         rospy.Subscriber("/find_objects", Object, self.callback_object)
@@ -47,13 +31,14 @@ class UpdateObjectDBNode:
         Save the object location when we see it
         """
         try:
-            cur = self.conn.cursor()
-            cur.execute("""INSERT INTO objects (name, x, y, z)
-                            VALUES (%s, %s, %s, %s)
-                        ON CONFLICT (name) DO UPDATE SET
-                            x = EXCLUDED.x, y = EXCLUDED.y, z = EXCLUDED.z;
-                        """, (data.name, data.x, data.y, data.z))
-            self.conn.commit()
+            # TODO support multiple of the same object
+            # Save an array of object locations
+            self.redis.set(self.prefix+"_"+data.name, json.dumps([{
+                    "name": data.name,
+                    "x": data.x,
+                    "y": data.y,
+                    "z": data.z
+                }]))
         except:
             rospy.logerr("Cannot insert row")
 

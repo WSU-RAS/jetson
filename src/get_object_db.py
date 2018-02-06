@@ -4,8 +4,9 @@ Example of how to get object locations from the database
 
 rosrun ras_jetson get_object_db.py
 """
+import json
 import rospy
-import psycopg2
+import redis
 
 class GetObjectDB:
     """
@@ -19,27 +20,21 @@ class GetObjectDB:
         rospy.init_node('getObjectDB')
 
         # Params
-        self.dbname = rospy.get_param("~db", "ras")
         self.server = rospy.get_param("~server", "localhost")
-        self.username = rospy.get_param("~user", "ras")
-        self.password = rospy.get_param("~pass", "ras")
+        self.port   = rospy.get_param("~port", "6379")
+        self.prefix = rospy.get_param("~prefix", "object")
 
-        try:
-            self.conn = psycopg2.connect(
-                    "dbname='%s' user='%s' host='localhost' password='%s'"%(
-                        self.dbname, self.username, self.password))
-        except:
-            rospy.logfatal("unable to connect to database")
+        self.redis = redis.StrictRedis(host=self.server, port=self.port, db=0)
 
     def get(self, name):
-        try:
-            cur = self.conn.cursor()
-            cur.execute("SELECT x,y,z FROM objects WHERE name = %s", (name,))
-            return cur.fetchone()
-        except:
-            rospy.logerr("could not get object location")
+        data = self.redis.get(self.prefix+"_"+name)
 
-        return None
+        if data:
+            data = json.loads(data.decode("utf-8"))
+        else:
+            data = None
+
+        return data
 
 if __name__ == '__main__':
     try:
