@@ -16,7 +16,7 @@ class GetObjectDB:
     """
     def __init__(self):
         # Name this node
-        rospy.init_node('getObjectDB', anonymous=True)
+        rospy.init_node('getObjectDB')
 
         # Params
         self.dbname = rospy.get_param("~db", "ras")

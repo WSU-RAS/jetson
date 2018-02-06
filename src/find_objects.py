@@ -18,26 +18,19 @@ class FindObjectsNode:
     Take the point clouds from the depth sensor and the bounding boxes from the
     object detection to find 3D locations of objects in view
 
-    lastSeenTimeout is the number of point cloud frames for which to keep
-    updating the object's position after receiving the last bounding box.
-    After this time, we'll assume the object is no longer in view and wait till
-    we receive another bounding box update.
-
     Usage:
         node = FindObjectsNode()
         rospy.spin()
     """
-    def __init__(self, lastSeenTimeout=30):
-        # For saving bounding boxes in one callback and using in another
-        self.lastSeen = None
-        self.lastSeenCount = 0
-        self.lastSeenTimeout = lastSeenTimeout
+    def __init__(self):
+        # Save cloud in one callback and use it when we receive a bounding box
+        self.lastCloud = None
 
         # We'll publish the results
         self.pub = rospy.Publisher('find_objects', Object, queue_size=30)
 
         # Name this node
-        rospy.init_node('findObjects', anonymous=True)
+        rospy.init_node('findObjects')
 
         # Params
         self.target = rospy.get_param("~target", "map")
@@ -47,7 +40,7 @@ class FindObjectsNode:
         # For debugging also publish a point that we can vizualize in rviz
         if self.debug:
             self.debugPoint = rospy.Publisher('find_objects_debug',
-                    PointStamped, queue_size=30)
+                    PointStamped, queue_size=2)
 
         # Listen to reference frames, for the coordinate transformations
         self.tf_buffer = tf2_ros.Buffer()
@@ -96,27 +89,16 @@ class FindObjectsNode:
 
     def callback_point(self, cloud):
         """
-        Handle when we get a new point cloud
-
-        We will find the locations of objects in this rather than in callback_box
-        since as the robot is moving, tipping, etc. we want to keep updating where
-        the object is. This does assume that the object does not move between
-        updated bounding boxes, but we can get 20 fps with SSD MobileNet. It likely
-        only matters if using YOLO which right now is ~2.5 fps.
+        Save the newest point cloud
         """
-        # If we haven't seen a bounding box update for this many point clouds
-        # frames, then set lastSeen back to None. This is so we don't keep using
-        # old data when the objects go out of frame.
-        self.lastSeenCount += 1
+        #self.lastCloud = copy.copy(cloud)
+        self.lastCloud = cloud
 
-        if self.lastSeenCount > self.lastSeenTimeout:
-            self.lastSeen = None
-
-        # Use last bounding boxes we've received (points are at much higher
-        # rate than boxes)
-        if self.lastSeen:
-            points = []
-
+    def callback_box(self, data):
+        """
+        Figure out 3D location of objects for which we receive bounding boxes
+        """
+        if self.lastCloud:
             # Convert point cloud to map reference frame
             try:
                 # Arguments: target frame, source frame, time
@@ -132,7 +114,10 @@ class FindObjectsNode:
                     tf2_ros.ExtrapolationException):
                 rospy.logerr("error looking up tf2 transform")
 
-            for b in self.lastSeen:
+                # Can't do anything without the transform
+                return
+
+            for b in data.boundingBoxes:
                 # Get list of points we want, all of them in the bounding box
                 #
                 # Note: (u,v) is in image, (x,y,z) is in 3D space
@@ -145,7 +130,7 @@ class FindObjectsNode:
                 # Get the points from the point cloud, but ignore NaNs
                 points = []
 
-                for p in pc2.read_points(cloud, field_names=("x","y","z"),
+                for p in pc2.read_points(self.lastCloud, field_names=("x","y","z"),
                         uvs=uvs, skip_nans=True):
                     points.append((p[0],p[1],p[2]))
 
@@ -176,24 +161,6 @@ class FindObjectsNode:
                     rospy.logdebug("%s x %f y %f z %f" %(b.Class,p[0],p[1],p[2]))
                 else:
                     rospy.loginfo("all points are NaN in bounding box")
-
-    def callback_box(self, data):
-        """
-        Handle when we get a new bounding box
-
-        All we do is save it so we'll be able to process it next time we get a
-        point cloud, via callback_point
-        """
-        # We just received a frame, so reset this count
-        self.lastSeenCount = 0
-
-        for b in data.boundingBoxes:
-            rospy.logdebug("Box: xmin : %d ymin : %d xmax : %d ymax : %d prob : %d class : %s" % (
-                    b.xmin, b.ymin, b.xmax, b.ymax, b.probability, b.Class
-                ))
-
-        # Copy so we can use in the callback_point function
-        self.lastSeen = copy.copy(data.boundingBoxes)
 
 if __name__ == '__main__':
     try:

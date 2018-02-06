@@ -44,7 +44,7 @@ class HumanDetectorNode:
     Subscribe to the images and publish human detectionresults with ROS
 
     Usage:
-    with ObjectDetectorNode() as node:
+        node = HumanDetectorNode()
         rospy.spin()
     """
     def __init__(self, averageFPS=60):
@@ -52,7 +52,7 @@ class HumanDetectorNode:
         self.pub = rospy.Publisher('human_detector', BoundingBoxes, queue_size=10)
 
         # Name this node
-        rospy.init_node('human_detector', anonymous=True)
+        rospy.init_node('human_detector')
 
         # Parameters
         camera_namespace = rospy.get_param("~camera_namespace", "/camera/rgb/image_rect_color")
@@ -88,7 +88,7 @@ class HumanDetectorNode:
         try:
             image_np = self.bridge.imgmsg_to_cv2(data, "bgr8")
             boxes = self.processImage(image_np)
-            self.pub.publish(msgDN(data, boxes))
+            self.pub.publish(msg(data, boxes))
         except CvBridgeError as e:
             rospy.logerr(e)
             error = "(error)"

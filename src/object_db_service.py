@@ -14,7 +14,7 @@ class ObjectDBService:
     """
     def __init__(self):
         # Name this node
-        rospy.init_node('objectDBService', anonymous=True)
+        rospy.init_node('objectDBService')
 
         # Params
         self.dbname = rospy.get_param("~db", "ras")

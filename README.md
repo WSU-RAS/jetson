@@ -82,6 +82,9 @@ Install TensorFlow
     echo "source ~/.local/bin/virtualenvwrapper.sh" >> ~/.bashrc
     echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
 
+    # Human detection
+    pip2 install --user imutils
+
     # For Python 3
     mkvirtualenv -p python3 --system-site-packages tf-python3
     workon tf-python3

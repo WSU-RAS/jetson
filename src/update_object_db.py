@@ -13,7 +13,7 @@ class UpdateObjectDBNode:
     """
     def __init__(self):
         # Name this node
-        rospy.init_node('updateObjectDB', anonymous=True)
+        rospy.init_node('updateObjectDB')
 
         # Params
         self.dbname = rospy.get_param("~db", "ras")

@@ -221,7 +221,7 @@ class ObjectDetectorNode:
         self.pub = rospy.Publisher('object_detector', BoundingBoxes, queue_size=10)
 
         # Name this node
-        rospy.init_node('object_detector', anonymous=True)
+        rospy.init_node('object_detector')
 
         # Parameters
         graph_path = os.path.expanduser(rospy.get_param("~graph_path"))
