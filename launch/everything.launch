@@ -7,7 +7,7 @@
 
     <!-- Object Detector, pick either TensorFlow or YOLO -->
     <!--<include file="$(find ras_jetson)/launch/object_detector.launch" />-->
-    <include file="$(find darknet_ros)/launch/darknet_ros.launch" />
+    <!--<include file="$(find darknet_ros)/launch/darknet_ros.launch" />-->
 
     <!-- Take point cloud and bounding boxes to find object 3D locations -->
     <include file="$(find ras_jetson)/launch/find_objects.launch" />
