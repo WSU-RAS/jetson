@@ -225,15 +225,15 @@ initializing the submodules.
 
     mkdir -p ~/catkin_py3/src/
     cd ~/catkin_py3/src/
-    git clone --recursive https://github.com/WSU-RAS/ras-object-detection.git
+    git clone --recursive https://github.com/WSU-RAS/jetson-py3.git ras_jetson_py3
 
 Clone the *vision_opencv* package to make *cv_bridge* work with Python 3:
 
-    git clone https://github.com/ros-perception/vision_opencv.git
+    git clone https://github.com/WSU-RAS/vision_opencv.git
 
 Then, generate the protobuf files:
 
-    cd ~/catkin_ws/src/ras-object-detection/models/research/
+    cd ~/catkin_py3/src/ras_jetson_py3/models/research/
     protoc object_detection/protos/*.proto --python_out=.
 
 Now build OpenCV 2 for Python 3
@@ -275,13 +275,14 @@ However, since that'll break Python 2, let's only do it for our one package (TOD
 
 Make sure you have sourced the previous workspace before building:
 
+    source /opt/ros/lunar/setup.bash
     source ~/catkin_ws/devel/setup.bash
 
 Build everything:
 
-    source /opt/ros/lunar/setup.bash
     cd ~/catkin_py3
-    catkin_make -DFILTER=OFF -DPYTHON_EXECUTABLE=/usr/bin/python3 -DPYTHON_VERSION=3
+    workon tf-python3
+    catkin_make -DFILTER=OFF -DPYTHON_EXECUTABLE=$(which python) -DPYTHON_VERSION=3
     catkin_make install
 
 Now that this is an overlay workspace, you can source this:
@@ -340,7 +341,7 @@ Then, upload the File -> Sketchbook -> ArbotiX Sketches -> ros.
 
 Setting up on the Jetson so you can control the servos from ROS:
 
-    roslaunch object_detector_ros camera.launch
+    roslaunch ras_jetson camera.launch
     arbotix_gui
 
 ### Connecting to NUC
@@ -372,15 +373,25 @@ accordingly. For us on the TurtleBot 2, these are z = 1.4224 m and x = 0.0635 m.
 Then, run on the NUC (TODO this was for TurtleBot 2):
 
     cd ~/catkin_ws/src
-    git clone https://github.com/WSU-RAS/ras-description.git ras_description
+    git clone https://github.com/WSU-RAS/turtlebot3.git
 
     source ~/catkin_ws/devel/setup.bash
     roscore
-    roslaunch ras_description everything.launch
+    roslaunch turtlebot3_bringup turtlebot3_robot.launch
+    roslaunch turtlebot3_bringup turtlebot3_remote.launch
+    rosrun rviz rviz -d `rospack find turtlebot3_description`/rviz/model.rviz
 
 Then, run on Jetson:
 
-    roslaunch object_detector_ros everything.launch
+    roslaunch ras_jetson everything.launch
+
+    # Either YOLO object detection
+    roslaunch darknet_ros darknet_ros
+
+    # or TensorFlow object detection
+    cd ~/catkin_py3
+    . src/ras_jetson_py3/setup-env.sh
+    roslaunch ras_jetson_py3 object_detector.launch
 
     # Optionally either of these, to control the camera:
     rosrun arbotix_python arbotix_gui
