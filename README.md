@@ -92,7 +92,7 @@ Install TensorFlow
     git clone https://github.com/jetsonhacks/installTensorFlowJetsonTX.git
     cd installTensorFlowJetsonTX/TX2/
     pip install tensorflow-1.3.0-cp35-cp35m-linux_aarch64.whl
-    pip install catkin_pkg rospkg
+    pip install catkin_pkg rospkg pillow
     deactivate
 
     # For Python 2
@@ -122,14 +122,10 @@ In your *.ssh/config* for ease of SSHing:
     ForwardX11Trusted yes
     Compression yes
 
-For TensorFlow Object Detection, add this to the *.bashrc* file:
-
-    export PYTHONPATH=$PYTHONPATH:/home/nvidia/catkin_ws/src/ras-object-detection/models/research/:/home/nvidia/catkin_ws/src/ras-object-detection/models/research/slim/
-
 Copy your model files over to the Jetson *~/networks*:
 
-    scp -r /path/to/ras-object-detection/datasets/SmartHome/*.pb jetson:networks/
-    scp /path/to/ras-object-detection/datasets/SmartHome/tf_label_map.pbtxt jetson:networks/
+    scp -r /path/to/ras-object-detection/datasets/SmartHome2/*.pb jetson:networks/
+    scp /path/to/ras-object-detection/datasets/SmartHome2/tf_label_map.pbtxt jetson:networks/
     scp -r /path/to/ras-object-detection/datasets/SmartHome/test_images jetson:networks/
 
 Install ROS ([src](http://wiki.ros.org/lunar/Installation/Ubuntu)):
@@ -265,15 +261,14 @@ them back after you do the `make install`. Also, make sure you run `sudo
 
 Now, if you do "import cv2" it'll still try to use the Python 2.7 version
 provided in ROS, which will error. Thus, first try the version we just
-installed:
+installed. Before you use it, you need to:
 
-    echo 'export PYTHONPATH="/usr/local/lib/python3.5/dist-packages:$PYTHONPATH"' >> ~/.bashrc
+    export PYTHONPATH="/usr/local/lib/python3.5/dist-packages:$PYTHONPATH"
 
-However, since that'll break Python 2, let's only do it for our one package (TODO?):
+which we will do in setup-env.sh before running the Python 3 object detection.
 
-    echo "/usr/local/lib/python3.5/dist-packages/" >> TODO.pth
-
-Make sure you have sourced the previous workspace before building:
+Make sure you have sourced the previous workspace before building, to make this
+an overlay workspace:
 
     source /opt/ros/lunar/setup.bash
     source ~/catkin_ws/devel/setup.bash
@@ -283,12 +278,6 @@ Build everything:
     cd ~/catkin_py3
     workon tf-python3
     catkin_make -DFILTER=OFF -DPYTHON_EXECUTABLE=$(which python) -DPYTHON_VERSION=3
-    catkin_make install
-
-Now that this is an overlay workspace, you can source this:
-
-    source ~/catkin_py3/devel/setup.bash
-    echo "source ~/catkin_py3/devel/setup.bash" >> ~/.bashrc
 
 ## YOLO Setup
 Copy the final weights over for YOLO into the *darknet_ros* directory:
@@ -386,7 +375,7 @@ Then, run on Jetson:
     roslaunch ras_jetson everything.launch
 
     # Either YOLO object detection
-    roslaunch darknet_ros darknet_ros
+    roslaunch darknet_ros darknet_ros.launch
 
     # or TensorFlow object detection
     cd ~/catkin_py3
@@ -416,25 +405,24 @@ end of the lines printed:
 
 ### Running YOLO
 
-    source ~/catkin_ws/devel/setup.bash
     roslaunch darknet_ros darknet_ros.launch
 
 ### Running TensorFlow
 
 Run the Object Detector after editing the *params.yaml* file:
 
-    source ~/catkin_ws/devel/setup.bash
-    roslaunch object_detector_ros object_detector.launch
+    cd ~/catkin_py3
+    . src/ras_jetson_py3/setup-env.sh
+    roslaunch ras_jetson_py3 object_detector.launch
 
 Or, run components individually:
 
-    source /opt/ros/lunar/setup.bash
     roscore
     rosrun image_view image_view image:=/camera/rgb/image_raw
     rostopic echo /object_detector
 
-    source ~/catkin_ws/devel/setup.bash
-    # note: errors if you source the /opt/ros/lunar/setup.bash one
-    rosrun object_detector_ros object_detector.py \
+    cd ~/catkin_py3
+    . src/ras_jetson_py3/setup-env.sh
+    rosrun ras_jetson_py3 object_detector.py \
         _graph_path:=~/networks/ssd_mobilenet_v1.pb \
         _labels_path:=~/networks/tf_label_map.pbtxt
