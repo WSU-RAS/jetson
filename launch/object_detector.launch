@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="object_detector" pkg="ras_jetson" type="object_detector.py">
+        <rosparam command="load" file="$(find ras_jetson)/launch/object_detector.yaml" />
+    </node>
+</launch>
