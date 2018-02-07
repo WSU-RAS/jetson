@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="websocket" default="9090" />
+    <arg name="http" default="8080" />
+    <arg name="directory" default="$(find ras_jetson)/src/web/" />
+
+    <!-- Web socket -->
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" >
+        <arg name="port" value="$(arg websocket)"/>
+    </include>
+
+    <!-- Simple HTTP server -->
+    <node name="http_server" pkg="ras_jetson" type="http_server.py">
+         <param name="http_port" value="$(arg http)" />
+         <param name="directory" value="$(arg directory)" />
+    </node>
+</launch>

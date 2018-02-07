@@ -24,4 +24,7 @@
 
     <!-- Human detector -->
     <!--<node name="human_detector" pkg="ras_jetson" type="human_detector.py" />-->
+
+    <!-- Web interface -->
+    <include file="$(find ras_jetson)/launch/web.launch" />
 </launch>
