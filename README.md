@@ -386,7 +386,7 @@ Then, run on Jetson:
     roslaunch ras_jetson everything.launch
 
     # Either YOLO object detection
-    roslaunch darknet_ros darknet_ros
+    roslaunch darknet_ros darknet_ros.launch
 
     # or TensorFlow object detection
     cd ~/catkin_py3
@@ -416,25 +416,24 @@ end of the lines printed:
 
 ### Running YOLO
 
-    source ~/catkin_ws/devel/setup.bash
     roslaunch darknet_ros darknet_ros.launch
 
 ### Running TensorFlow
 
 Run the Object Detector after editing the *params.yaml* file:
 
-    source ~/catkin_ws/devel/setup.bash
-    roslaunch object_detector_ros object_detector.launch
+    cd ~/catkin_py3
+    . src/ras_jetson_py3/setup-env.sh
+    roslaunch ras_jetson_py3 object_detector.launch
 
 Or, run components individually:
 
-    source /opt/ros/lunar/setup.bash
     roscore
     rosrun image_view image_view image:=/camera/rgb/image_raw
     rostopic echo /object_detector
 
-    source ~/catkin_ws/devel/setup.bash
-    # note: errors if you source the /opt/ros/lunar/setup.bash one
-    rosrun object_detector_ros object_detector.py \
+    cd ~/catkin_py3
+    . src/ras_jetson_py3/setup-env.sh
+    rosrun ras_jetson_py3 object_detector.py \
         _graph_path:=~/networks/ssd_mobilenet_v1.pb \
         _labels_path:=~/networks/tf_label_map.pbtxt
