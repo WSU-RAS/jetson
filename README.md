@@ -51,6 +51,11 @@ Disable the display manager (if desired):
     sudo rm /etc/X11/default-display-manager
     sudo touch /etc/X11/default-display-manager
 
+Disable snapd:
+
+    sudo systemctl disable snapd snapd.socket
+    sudo systemctl stop snapd snapd.socket
+
 Set CPUs and GPU to max performance on boot (if desired): add this right before
 the `exit 0` in */etc/rc.local* script:
 
@@ -74,44 +79,18 @@ Install TensorFlow
         redis-server python{,3}-redis \
         ros-lunar-rosserial ros-lunar-rosserial-arduino
 
-    pip3 install --user virtualenvwrapper
-    export WORKON_HOME=~/Envs
-    export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-    source ~/.local/bin/virtualenvwrapper.sh
-    echo "export WORKON_HOME=~/Envs" >> ~/.bashrc
-    echo "export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3" >> ~/.bashrc
-    echo "source ~/.local/bin/virtualenvwrapper.sh" >> ~/.bashrc
-    echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
+    git clone https://github.com/peterlee0127/tensorflow-tx2.git
+    cd tensorflow-tx2
+    pip2 install --user tensorflow-1.4.1-cp27-cp27mu-linux_aarch64.whl
+
+    # Object detection with TensorFlow
+    pip2 install --user pillow
 
     # Human detection
     pip2 install --user imutils
 
-    # For Python 3
-    mkvirtualenv -p python3 --system-site-packages tf-python3
-    workon tf-python3
-    git clone https://github.com/jetsonhacks/installTensorFlowJetsonTX.git
-    cd installTensorFlowJetsonTX/TX2/
-    pip install tensorflow-1.3.0-cp35-cp35m-linux_aarch64.whl
-    pip install catkin_pkg rospkg pillow
-    deactivate
-
-    # For Python 2
-    mkvirtualenv -p python2 --system-site-packages tf-python2
-    workon tf-python2
-    git clone https://github.com/peterlee0127/tensorflow-tx2.git
-    cd tensorflow-tx2
-    pip install tensorflow-1.4.1-cp27-cp27mu-linux_aarch64.whl
-    deactivate
-
-If using Python 3.5, as
-[described](https://devtalk.nvidia.com/default/topic/1027449/jetson-tx2/run-tensorflow-1-3-on-tx2-stuck/post/5226615/)
-you need cuDNNv7. Download the .deb from
-[https://developer.nvidia.com/nvidia-tensorrt3rc-download](https://developer.nvidia.com/nvidia-tensorrt3rc-download).
-Then:
-
-    sudo dpkg -i nv-tensorrt-repo-ubuntu1604-rc-cuda8.0-trt3.0-20170922_3.0.0-1_arm64.deb
-    sudo apt update
-    sudo apt install tensorrt python3-dev
+    # For some reason catkin won't build without installing via pip
+    pip2 install --user docutils rospkg
 
 In your *.ssh/config* for ease of SSHing:
 
@@ -141,11 +120,7 @@ Install ROS ([src](http://wiki.ros.org/lunar/Installation/Ubuntu)):
     source /opt/ros/lunar/setup.bash
     echo "source /opt/ros/lunar/setup.bash" >> ~/.bashrc
 
-Make ROS work with Python 3:
-
-    sudo apt-get install python3-empy # Errors building messages without this
-
-### First Workspace
+## Catkin Workspace
 
 Create our Catkin workspace:
 
@@ -179,12 +154,17 @@ enough that it errors on importing due to some renames.
 
 The object detection code:
 
-    git clone https://github.com/WSU-RAS/jetson ras_jetson
+    git clone --recursive https://github.com/WSU-RAS/jetson ras_jetson
     git clone https://github.com/WSU-RAS/cob_perception_msgs
 
-For some reason catkin won't build without installing via pip:
-    
-    pip2 install --user docutils rospkg
+Then, generate the protobuf files:
+
+    cd ~/catkin_ws/src/ras_jetson/models/research/
+    protoc object_detection/protos/*.proto --python_out=.
+
+Add to your ~/.bashrc file:
+
+    echo 'export PYTHONPATH=$PYTHONPATH:/home/nvidia/catkin_ws/src/ras_jetson/models/research/:/home/nvidia/catkin_ws/src/ras_jetson/models/research/slim/' >> ~/.bashrc
 
 Build everything:
 
@@ -192,7 +172,6 @@ Build everything:
     cd ~/catkin_ws
     catkin_make --pkg darknet_ros_msgs # Needs to be built before darknet_ros
     catkin_make -DFILTER=OFF -DCMAKE_BUILD_TYPE=Release
-    catkin_make install
 
 Source this new workspace:
 
@@ -202,7 +181,6 @@ Source this new workspace:
 Setup udev rules for camera, then make sure to unplug then plug back in the
 camera:
 
-    source ~/catkin_ws/devel/setup.bash
     cd ~/catkin_ws/src/astra_camera
     ./scripts/create_udev_rules
 
@@ -211,13 +189,151 @@ and measure square in meters. Mine are 0.025 m. Follow the [tutorial](http://wik
 
     rosrun camera_calibration cameracalibrator.py --size 8x6 --square 0.025 image:=/camera/rgb/image_raw camera:=/camera/rgb
 
-### Overlay Workspace
+## Arduino Setup for Camera Pan/Tilt
+Install Arduino IDE 1.0.6 on some computer (on Arch Linux try the *arduino10*
+package in the AUR). Follow [ArbotiX-M instructions](http://learn.trossenrobotics.com/arbotix/7-arbotix-quick-start-guide).
+Download the [ArbotiX-M](https://github.com/trossenrobotics/arbotix/archive/master.zip)
+files and extract into your *~/sketchbook* folder.
 
-Now we need to overlay a new workspace since this repository requires Python 3
-which messes up some of what we have in our previous workspace.
+If you can't get permissions to work despite adding yourself to uucp and lock
+groups, then make sure that "/run/lock" is in the lock group:
 
-Download this repo. Note you may have some issues if you move this after
-initializing the submodules.
+    sudo chgrp lock /run/lock
+
+Then, upload the File -> Sketchbook -> ArbotiX Sketches -> ros.
+
+Setting up on the Jetson so you can control the servos from ROS:
+
+    roslaunch ras_jetson camera.launch
+    arbotix_gui
+
+## Connecting to NUC
+Since we'll run some on the Jetson and some on the NUC, we'll need to set one
+up as the ROS master.  We'll use the NUC.
+
+Jetson (since we enabled systemd-resolved earlier), so we can resolve the NUC
+hostname with LLMNR:
+
+    sudo apt install libnss-resolve
+
+In *~/.bashrc* on the Jetson:
+
+    export ROS_MASTER_URI=http://wsu-ras:11311
+    machine_ip=($(hostname -I))
+    export ROS_IP=${machine_ip[0]}
+
+or, if you have issues resolving it now and then, maybe try:
+
+    export ROS_MASTER_URI=http://$(systemd-resolve -4 wsu-ras | head -n 1 | grep -Eo "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b"):11311
+
+Then, replace 127.0.1.1 with 127.0.0.1 in */etc/hosts* on the Jetson.
+Otherwise, often it can't connect to the ROS master on the NUC.
+
+In *~/.bashrc* on the NUC:
+
+    export ROS_MASTER_URI=http://wsu-ras:11311
+    machine_ip=($(hostname -I))
+    export ROS_IP=${machine_ip[0]}
+    export TURTLEBOT_3D_SENSOR=astra
+    export TURTLEBOT3_MODEL=waffle
+
+Then, run on the NUC:
+
+    cd ~/catkin_ws/src
+    git clone https://github.com/WSU-RAS/turtlebot3.git
+
+    source ~/catkin_ws/devel/setup.bash
+    roscore
+    roslaunch turtlebot3_bringup turtlebot3_robot.launch
+    roslaunch turtlebot3_bringup turtlebot3_remote.launch
+    rosrun rviz rviz -d $(rospack find turtlebot3_description)/rviz/model.rviz
+
+Then, run on Jetson:
+
+    roslaunch ras_jetson everything.launch
+
+    # Optionally either of these, to control the camera
+    rosrun arbotix_python arbotix_gui
+    rosrun object_detector_ros demo_pan_tilt.py
+
+## YOLO Setup (optional)
+Copy the final weights over for YOLO into the *darknet_ros* directory:
+
+    scp path/to/ras-object-detection/datasets/SmartHome/backup_100/SmartHome_final.weights \
+        jetson:catkin_ws/src/darknet_ros/darknet_ros/yolo_network_config/weights/SmartHome.weights
+    scp path/to/ras-object-detection/datasets/SmartHome/config.cfg \
+        jetson:catkin_ws/src/darknet_ros/darknet_ros/yolo_network_config/cfg/SmartHome.cfg
+    scp path/to/ras-object-detection/dataset_100.data \
+        jetson:catkin_ws/src/darknet_ros/darknet_ros/config/
+
+Create *~/catkin_ws/src/darknet_ros/darknet_ros/config/SmartHome.yaml*,
+changing the classes accordingly. Make sure the spaces/tabs are correct or else
+it'll error parsing the file. Then change "yolo\_voc.yaml" to "SmartHome.yaml"
+in *~/catkin_ws/src/darknet_ros/darknet_ros/launch/darknet_ros.launch*.
+
+    yolo_model:
+        config_file:
+            name: SmartHome.cfg
+        weight_file:
+            name: SmartHome.weights
+        threshold:
+            value: 0.3
+        detection_classes:
+            names:
+              -  food
+              -  glass
+              -  keys
+              -  pillbottle
+              -  plant
+              -  umbrella
+              -  watercan
+
+If you don't want it showing the window with predictions, then set
+*enable_opencv* and *use_darknet* to false in
+*~/catkin_ws/src/darknet_ros/darknet_ros/config/ros.yaml*.
+
+Edit the *everything.launch* file to use YOLO rather than TensorFlow.
+
+## Python 3 (not required)
+
+If you want to try out TensorFlow with Python 3 rather than Python 2, you'll
+probably want to set up everything in a separate workspace and overlay that on
+the previous one so you don't mess up all the Python 2 packages.
+
+Setup virtual environment for Python 3:
+
+    pip3 install --user virtualenvwrapper
+    export WORKON_HOME=~/Envs
+    export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+    source ~/.local/bin/virtualenvwrapper.sh
+    echo "export WORKON_HOME=~/Envs" >> ~/.bashrc
+    echo "export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3" >> ~/.bashrc
+    echo "source ~/.local/bin/virtualenvwrapper.sh" >> ~/.bashrc
+    echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
+
+    mkvirtualenv -p python3 --system-site-packages tf-python3
+    workon tf-python3
+    git clone https://github.com/jetsonhacks/installTensorFlowJetsonTX.git
+    cd installTensorFlowJetsonTX/TX2/
+    pip install tensorflow-1.3.0-cp35-cp35m-linux_aarch64.whl
+    pip install catkin_pkg rospkg pillow
+    deactivate
+
+If using Python 3.5, as
+[described](https://devtalk.nvidia.com/default/topic/1027449/jetson-tx2/run-tensorflow-1-3-on-tx2-stuck/post/5226615/)
+you need cuDNNv7. Download the .deb from
+[https://developer.nvidia.com/nvidia-tensorrt3rc-download](https://developer.nvidia.com/nvidia-tensorrt3rc-download).
+Then:
+
+    sudo dpkg -i nv-tensorrt-repo-ubuntu1604-rc-cuda8.0-trt3.0-20170922_3.0.0-1_arm64.deb
+    sudo apt update
+    sudo apt install tensorrt python3-dev
+
+Make ROS work with Python 3:
+
+    sudo apt-get install python3-empy # Errors building messages without this
+
+Download the Python 3 version of the object detector node.
 
     mkdir -p ~/catkin_py3/src/
     cd ~/catkin_py3/src/
@@ -226,11 +342,6 @@ initializing the submodules.
 Clone the *vision_opencv* package to make *cv_bridge* work with Python 3:
 
     git clone https://github.com/WSU-RAS/vision_opencv.git
-
-Then, generate the protobuf files:
-
-    cd ~/catkin_py3/src/ras_jetson_py3/models/research/
-    protoc object_detection/protos/*.proto --python_out=.
 
 Now build OpenCV 2 for Python 3
 ([src](https://www.pyimagesearch.com/2016/10/24/ubuntu-16-04-how-to-install-opencv/)).
@@ -279,137 +390,7 @@ Build everything:
     workon tf-python3
     catkin_make -DFILTER=OFF -DPYTHON_EXECUTABLE=$(which python) -DPYTHON_VERSION=3
 
-## YOLO Setup
-Copy the final weights over for YOLO into the *darknet_ros* directory:
-
-    scp path/to/ras-object-detection/datasets/SmartHome/backup_100/SmartHome_final.weights \
-        jetson:catkin_ws/src/darknet_ros/darknet_ros/yolo_network_config/weights/SmartHome.weights
-    scp path/to/ras-object-detection/datasets/SmartHome/config.cfg \
-        jetson:catkin_ws/src/darknet_ros/darknet_ros/yolo_network_config/cfg/SmartHome.cfg
-    scp path/to/ras-object-detection/dataset_100.data \
-        jetson:catkin_ws/src/darknet_ros/darknet_ros/config/
-
-Create *~/catkin_ws/src/darknet_ros/darknet_ros/config/SmartHome.yaml*,
-changing the classes accordingly. Make sure the spaces/tabs are correct or else
-it'll error parsing the file. Then change "yolo\_voc.yaml" to "SmartHome.yaml"
-in *~/catkin_ws/src/darknet_ros/darknet_ros/launch/darknet_ros.launch*.
-
-    yolo_model:
-        config_file:
-            name: SmartHome.cfg
-        weight_file:
-            name: SmartHome.weights
-        threshold:
-            value: 0.3
-        detection_classes:
-            names:
-              -  food
-              -  glass
-              -  keys
-              -  pillbottle
-              -  plant
-              -  umbrella
-              -  watercan
-
-If you don't want it showing the window with predictions, then set
-*enable_opencv* and *use_darknet* to false in
-*~/catkin_ws/src/darknet_ros/darknet_ros/config/ros.yaml*.
-
-## Arduino Setup for Camera Pan/Tilt
-Install Arduino IDE 1.0.6 on some computer (on Arch Linux try the *arduino10*
-package in the AUR). Follow [ArbotiX-M instructions](http://learn.trossenrobotics.com/arbotix/7-arbotix-quick-start-guide).
-Download the [ArbotiX-M](https://github.com/trossenrobotics/arbotix/archive/master.zip)
-files and extract into your *~/sketchbook* folder.
-
-If you can't get permissions to work despite adding yourself to uucp and lock
-groups, then make sure that "/run/lock" is in the lock group:
-
-    sudo chgrp lock /run/lock
-
-Then, upload the File -> Sketchbook -> ArbotiX Sketches -> ros.
-
-Setting up on the Jetson so you can control the servos from ROS:
-
-    roslaunch ras_jetson camera.launch
-    arbotix_gui
-
-### Connecting to NUC
-Since we'll run some on the Jetson and some on the NUC, we'll need to set one
-up as the ROS master.  We'll use the NUC.
-
-Jetson (since we enabled systemd-resolved earlier), so we can resolve the NUC
-hostname with LLMNR:
-
-    sudo apt install libnss-resolve
-
-In *~/.bashrc* on the Jetson:
-
-    export ROS_MASTER_URI=http://wsu-ras:11311
-
-Then, replace 127.0.1.1 with 127.0.0.1 in */etc/hosts* on the Jetson.
-Otherwise, often it can't connect to the ROS master on the NUC.
-
-In *~/.bashrc* on the NUC:
-
-    export ROS_MASTER_URI=http://wsu-ras:11311
-    export TURTLEBOT_3D_SENSOR=astra
-    export TURTLEBOT3_MODEL=waffle
-
-Measure where the camera is relative to */base_link*, and then modify
-*/opt/ros/kinetic/share/turtlebot_description/urdf/turtlebot_properties.urdf.xacro*
-accordingly. For us on the TurtleBot 2, these are z = 1.4224 m and x = 0.0635 m.
-
-Then, run on the NUC (TODO this was for TurtleBot 2):
-
-    cd ~/catkin_ws/src
-    git clone https://github.com/WSU-RAS/turtlebot3.git
-
-    source ~/catkin_ws/devel/setup.bash
-    roscore
-    roslaunch turtlebot3_bringup turtlebot3_robot.launch
-    roslaunch turtlebot3_bringup turtlebot3_remote.launch
-    rosrun rviz rviz -d `rospack find turtlebot3_description`/rviz/model.rviz
-
-Then, run on Jetson:
-
-    roslaunch ras_jetson everything.launch
-
-    # Either YOLO object detection
-    roslaunch darknet_ros darknet_ros.launch
-
-    # or TensorFlow object detection
-    cd ~/catkin_py3
-    . src/ras_jetson_py3/setup-env.sh
-    roslaunch ras_jetson_py3 object_detector.launch
-
-    # Optionally either of these, to control the camera:
-    rosrun arbotix_python arbotix_gui
-    rosrun object_detector_ros demo_pan_tilt.py
-
-## Running Object Detection
-
-### Speed
-
-If you wish to set the clocks and GPU to full speed (and didn't enable this on
-boot), then run
-([src](https://devtalk.nvidia.com/default/topic/1018081/jetson-tx2/tensorflow-mobilenet-object-detection-model-in-tx2-is-very-slow-/post/5185487/),
-[nvpmodel number reference](http://www.jetsonhacks.com/2017/03/25/nvpmodel-nvidia-jetson-tx2-development-kit/)):
-
-    sudo nvpmodel -m 0
-    sudo ~/jetson_clocks.sh
-
-To check that they're running as fast as possible, check that @1300 is at the
-end of the lines printed:
-
-    sudo ~/jetson_clocks.sh --show
-
-### Running YOLO
-
-    roslaunch darknet_ros darknet_ros.launch
-
-### Running TensorFlow
-
-Run the Object Detector after editing the *params.yaml* file:
+Finally, run TensorFlow with Python 3:
 
     cd ~/catkin_py3
     . src/ras_jetson_py3/setup-env.sh
