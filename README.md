@@ -77,6 +77,7 @@ Install TensorFlow
         jnettop protobuf-compiler python{,3}-pil python{,3}-lxml libxml2-dev \
         libxslt1-dev python{,3}-yaml python{,3}-docutils \
         redis-server python{,3}-redis \
+        ros-lunar-rosbridge-server ros-lunar-rosbridge-suite \
         ros-lunar-rosserial ros-lunar-rosserial-arduino
 
     git clone https://github.com/peterlee0127/tensorflow-tx2.git
