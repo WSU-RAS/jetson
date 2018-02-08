@@ -253,7 +253,7 @@ Then, run on the NUC:
     roslaunch turtlebot3_bringup turtlebot3_remote.launch
     rosrun rviz rviz -d $(rospack find turtlebot3_description)/rviz/model.rviz
 
-    rosrun ras_jetson go_to.py
+    rosrun ras_jetson_msgs go_to.py
 
 Then, run on Jetson:
 
