@@ -2,8 +2,8 @@
 import json
 import rospy
 import redis
-from ras_jetson.msg import Object
-from ras_jetson.srv import ObjectQuery, ObjectQueryResponse
+from ras_jetson_msgs.msg import Object
+from ras_jetson_msgs.srv import ObjectQuery, ObjectQueryResponse
 
 class ObjectDBService:
     """

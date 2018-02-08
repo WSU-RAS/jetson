@@ -2,7 +2,7 @@
 import json
 import rospy
 import redis
-from ras_jetson.msg import Object
+from ras_jetson_msgs.msg import Object
 
 class UpdateObjectDBNode:
     """

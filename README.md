@@ -242,6 +242,9 @@ Then, run on the NUC:
 
     cd ~/catkin_ws/src
     git clone https://github.com/WSU-RAS/turtlebot3.git
+    git clone https://github.com/WSU-RAS/hls_lfcd_lds_driver.git
+    git clone https://github.com/WSU-RAS/jetson_msgs.git ras_jetson_msgs
+    catkin_make
 
     source ~/catkin_ws/devel/setup.bash
     roscore

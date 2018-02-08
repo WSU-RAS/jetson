@@ -8,6 +8,7 @@ project(ras_jetson)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  ras_jetson_msgs
   darknet_ros_msgs
   cob_perception_msgs
   cv_bridge
@@ -51,20 +52,16 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  DIRECTORY
-    msg
-  FILES
-    Object.msg
-)
+#add_message_files(
+#  FILES
+#  Object.msg
+#)
 
 # Generate services in the 'srv' folder
-add_service_files(
-  DIRECTORY
-    srv
-  FILES
-    ObjectQuery.srv
-)
+#add_service_files(
+#  FILES
+#  ObjectQuery.srv
+#)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -74,11 +71,11 @@ add_service_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-    sensor_msgs
-    std_msgs
-)
+#generate_messages(
+#  DEPENDENCIES
+#  sensor_msgs
+#  std_msgs
+#)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -114,7 +111,6 @@ catkin_package(
 #  LIBRARIES ras_jetson
 #  CATKIN_DEPENDS cob_perception_msgs cv_bridge rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
-  CATKIN_DEPENDS message_runtime
 )
 
 ###########
