@@ -1,4 +1,10 @@
 #!/usr/bin/env python2
+"""
+Sets the head pan/tilt to a particular position
+
+This is used to initialize it on start. Later on maybe it will track the
+person, but for now it'll be fixed.
+"""
 import rospy
 from std_msgs.msg import Float64
 

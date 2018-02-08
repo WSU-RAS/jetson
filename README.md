@@ -78,6 +78,7 @@ Install TensorFlow
         libxslt1-dev python{,3}-yaml python{,3}-docutils \
         redis-server python{,3}-redis \
         ros-lunar-rosbridge-server ros-lunar-rosbridge-suite \
+        ros-lunar-move-base-msgs \
         ros-lunar-rosserial ros-lunar-rosserial-arduino
 
     git clone https://github.com/peterlee0127/tensorflow-tx2.git
@@ -251,6 +252,8 @@ Then, run on the NUC:
     roslaunch turtlebot3_bringup turtlebot3_robot.launch
     roslaunch turtlebot3_bringup turtlebot3_remote.launch
     rosrun rviz rviz -d $(rospack find turtlebot3_description)/rviz/model.rviz
+
+    rosrun ras_jetson go_to.py
 
 Then, run on Jetson:
 

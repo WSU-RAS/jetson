@@ -1,4 +1,10 @@
 #!/usr/bin/env python2
+"""
+Example code to publish directly to head pan/tilt joint states
+
+This will make the camera pan/tilt perform some back and forth motion for
+testing that the model correctly follows the real movement in rviz.
+"""
 import rospy
 from std_msgs.msg import Float64
 

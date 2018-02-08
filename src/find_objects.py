@@ -1,4 +1,22 @@
 #!/usr/bin/env python2
+"""
+This node listens to bounding boxes from a variety of object detectors and then
+uses the camera depth point cloud to calculate the 3D positions relative to the
+map (or whatever you set target as).
+
+Subscribes to point cloud from the camera depth sensor:
+    /camera/depth_registered/points - Depth data from camera
+
+Subscribes to bounding boxes:
+    /darknet_ros/bounding_boxes - YOLO object detection
+    /object_detector - TensorFlow object detection
+    /human_detector - OpenCV human detection
+
+Publishes to:
+    /find_objects - ras_jetson.msg.Object array of 3D positions of objects for
+                    the given bounding boxes
+    /find_objects_debug - PointStamped x, y, z of last object found
+"""
 import rospy
 import copy
 import numpy as np

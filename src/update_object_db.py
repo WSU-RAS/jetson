@@ -1,4 +1,12 @@
 #!/usr/bin/env python2
+"""
+Listen to object locations published from /find_objects and save to Redis DB
+for persistence
+
+object_db_service.py provides a service to access these saved locations.
+get_object_db.py and get_object_service.py are examples showing how to get the
+locations.
+"""
 import json
 import rospy
 import redis

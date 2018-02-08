@@ -1,4 +1,14 @@
 #!/usr/bin/env python2
+"""
+Provide a service for querying object locations saved in Redis DB
+
+Access via:
+    /query_objects
+
+See the get_object_service.py example code for how to use this. Or, to test,
+you can use:
+    rosservice call /query_objects pillbottle
+"""
 import json
 import rospy
 import redis

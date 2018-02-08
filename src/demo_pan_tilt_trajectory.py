@@ -1,6 +1,9 @@
 #!/usr/bin/env python2
 """
-Send a trajectory command to the pan-tilt
+Example code to send a trajectory command to the pan-tilt
+
+This will make the camera pan/tilt perform some back and forth motion for
+testing that the model correctly follows the real movement in rviz.
 
 Based on:
 http://sdk.rethinkrobotics.com/wiki/Joint_Trajectory_Client_-_Code_Walkthrough
