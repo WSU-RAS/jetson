@@ -78,6 +78,7 @@ Install TensorFlow
         libxslt1-dev python{,3}-yaml python{,3}-docutils \
         redis-server python{,3}-redis \
         ros-lunar-rosbridge-server ros-lunar-rosbridge-suite \
+        ros-lunar-move-base-msgs \
         ros-lunar-rosserial ros-lunar-rosserial-arduino
 
     git clone https://github.com/peterlee0127/tensorflow-tx2.git
@@ -242,12 +243,19 @@ Then, run on the NUC:
 
     cd ~/catkin_ws/src
     git clone https://github.com/WSU-RAS/turtlebot3.git
+    git clone https://github.com/WSU-RAS/jetson.git ras_jetson # note, not recursive
+    git clone https://github.com/WSU-RAS/darknet_ros.git # just need messages
+    git clone https://github.com/WSU-RAS/cob_perception_msgs # more messages
+    cd ..
+    catkin_make
 
     source ~/catkin_ws/devel/setup.bash
     roscore
     roslaunch turtlebot3_bringup turtlebot3_robot.launch
     roslaunch turtlebot3_bringup turtlebot3_remote.launch
     rosrun rviz rviz -d $(rospack find turtlebot3_description)/rviz/model.rviz
+
+    rosrun ras_jetson go_to.py
 
 Then, run on Jetson:
 

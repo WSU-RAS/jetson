@@ -1,4 +1,10 @@
 #!/usr/bin/env python2
+"""
+Very simple HTTP server
+
+This potentially will be used for the tablet interface, where we open the
+webpage on the tablet to display videos, prompts, etc.
+"""
 import os
 import rospy
 import SimpleHTTPServer
