@@ -165,7 +165,7 @@ class FindObjectsNode:
                     # However, very rarely in our setup will we ever have a
                     # point closer within the bounding box than the object's
                     # location.
-                    minindex = np.argmin(np.array(points))
+                    minindex = np.argmin(np.array(dist2))
                     loc = points[minindex]
 
                     # Coordinate transformation
