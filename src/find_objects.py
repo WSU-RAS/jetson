@@ -147,17 +147,29 @@ class FindObjectsNode:
 
                 # Get the points from the point cloud, but ignore NaNs
                 points = []
+                dist2 = []
 
                 for p in pc2.read_points(self.lastCloud, field_names=("x","y","z"),
                         uvs=uvs, skip_nans=True):
                     points.append((p[0],p[1],p[2]))
+                    # distance squared, i.e. sqrt(x^2+y^2+z^2)^2 = x^2+y^2+z^2,
+                    # since we only care of min and sqrt doesn't affect this
+                    # but is expensive to compute
+                    dist2.append(p[0]**2 + p[1]**2 + p[2]**2)
 
                 if len(points) > 0:
-                    # Average point locations
-                    mean = np.array(points).mean(axis=0)
+                    # Minimum distance should be the best approximation of
+                    # where an object is from the depth sensor. Averaging will
+                    # yield a point farther back since there will be lots of
+                    # other points behind the object in the bounding box.
+                    # However, very rarely in our setup will we ever have a
+                    # point closer within the bounding box than the object's
+                    # location.
+                    minindex = np.argmin(np.array(points))
+                    loc = points[minindex]
 
                     # Coordinate transformation
-                    p = transform_kdl*PyKDL.Vector(mean[0],mean[1],mean[2])
+                    p = transform_kdl*PyKDL.Vector(loc[0],loc[1],loc[2])
 
                     # Publish object update
                     msg = Object()
