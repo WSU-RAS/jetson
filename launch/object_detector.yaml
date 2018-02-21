@@ -10,3 +10,6 @@ camera_namespace: "/camera/rgb/image_rect_color"
 
 # Threshold for what we'll decide is a real object
 threshold: 0.5
+
+# Maximum amount of system memory to use in TensorFlow, in range 0 - 1
+memory: 0.5

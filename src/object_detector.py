@@ -58,9 +58,12 @@ class ObjectDetector:
         boxes, scores, classes = detector.process(newImage)
         detector.close()
     """
-    def __init__(self, graph_path, labels_path, threshold):
+    def __init__(self, graph_path, labels_path, threshold, memory):
         # Threshold for what to count as objects
         self.threshold = threshold
+
+        # Max memory usage (0 - 1)
+        self.memory = memory
 
         # Load frozen TensorFlow model into memory
         self.detection_graph = tf.Graph()
@@ -82,8 +85,15 @@ class ObjectDetector:
         self.category_index = label_map_util.create_category_index(categories)
 
     def open(self):
+        # Config options: max GPU memory to use. This is important since on the
+        # Jetson TX2 the GPU and main memory are shared. So, if TF tries to use
+        # lots of memory, it'll get killed since we run out of system memory as
+        # well.
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=self.memory)
+        config = tf.ConfigProto(gpu_options=gpu_options)
+
         # Session
-        self.session = tf.Session(graph=self.detection_graph)
+        self.session = tf.Session(graph=self.detection_graph, config=config)
 
         #
         # Inputs/outputs to network
@@ -227,10 +237,11 @@ class ObjectDetectorNode:
         graph_path = os.path.expanduser(rospy.get_param("~graph_path"))
         labels_path = os.path.expanduser(rospy.get_param("~labels_path"))
         threshold = rospy.get_param("~threshold", 0.5)
+        memory = rospy.get_param("~memory", 0.5) # 0 to 1
         camera_namespace = rospy.get_param("~camera_namespace", "/camera/rgb/image_rect_color")
 
         # Object Detector
-        self.detector = ObjectDetector(graph_path, labels_path, threshold)
+        self.detector = ObjectDetector(graph_path, labels_path, threshold, memory)
         self.detector.open()
 
         # For processing images
