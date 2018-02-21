@@ -7,7 +7,7 @@
     <arg name="source" default="camera_depth_optical_frame" />
     <arg name="debug" default="True" />
 
-    <node name="find_objects" pkg="ras_jetson" type="find_objects.py">
+    <node name="find_objects" pkg="object_detection" type="find_objects.py">
         <!-- for coordinate transform since we want to save locations relative
              to the map, not the camera frame -->
          <param name="target" value="$(arg target)" />

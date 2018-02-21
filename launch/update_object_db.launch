@@ -5,7 +5,7 @@
     <arg name="user" default="ras" />
     <arg name="pass" default="ras" />
 
-    <node name="update_object_db" pkg="ras_jetson" type="update_object_db.py">
+    <node name="update_object_db" pkg="object_detection" type="update_object_db.py">
          <param name="db" value="$(arg db)" />
          <param name="server" value="$(arg server)" />
          <param name="user" value="$(arg user)" />

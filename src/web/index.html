@@ -76,7 +76,7 @@
   var listener = new ROSLIB.Topic({
     ros : ros,
     name : '/find_objects',
-    messageType : 'ras_jetson/Object'
+    messageType : 'object_detection/Object'
   });
 
   // Then we add a callback to be called every time a message is published on this topic.

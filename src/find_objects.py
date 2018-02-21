@@ -13,7 +13,7 @@ Subscribes to bounding boxes:
     /human_detector - OpenCV human detection
 
 Publishes to:
-    /find_objects - ras_jetson.msg.Object array of 3D positions of objects for
+    /find_objects - object_detection.msg.Object array of 3D positions of objects for
                     the given bounding boxes
     /find_objects_debug - PointStamped x, y, z of last object found
 """
@@ -24,7 +24,7 @@ from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import PointStamped
 import sensor_msgs.point_cloud2 as pc2
 from darknet_ros_msgs.msg import BoundingBoxes
-from ras_jetson_msgs.msg import Object
+from object_detection_msgs.msg import Object
 
 # Coordinate transformation
 import tf2_ros

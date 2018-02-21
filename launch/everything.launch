@@ -6,25 +6,25 @@
     </include>
 
     <!-- Object Detector, pick either TensorFlow or YOLO -->
-    <include file="$(find ras_jetson)/launch/object_detector.launch" />
+    <include file="$(find object_detection)/launch/object_detector.launch" />
     <!--<include file="$(find darknet_ros)/launch/darknet_ros.launch" />-->
 
     <!-- Take point cloud and bounding boxes to find object 3D locations -->
-    <include file="$(find ras_jetson)/launch/find_objects.launch" />
+    <include file="$(find object_detection)/launch/find_objects.launch" />
 
     <!-- Save object locations to the database -->
-    <include file="$(find ras_jetson)/launch/update_object_db.launch" />
+    <include file="$(find object_detection)/launch/update_object_db.launch" />
 
     <!-- Service to query object locations from the database -->
-    <node name="object_db_service" pkg="ras_jetson" type="object_db_service.py" />
+    <node name="object_db_service" pkg="object_detection" type="object_db_service.py" />
 
     <!-- Zero the pan tilt so camera is in a good position -->
-    <include file="$(find ras_jetson)/launch/pantilt.launch" />
-    <node name="zero_pan_tilt" pkg="ras_jetson" type="zero_pan_tilt.py" />
+    <include file="$(find object_detection)/launch/pantilt.launch" />
+    <node name="zero_pan_tilt" pkg="object_detection" type="zero_pan_tilt.py" />
 
     <!-- Human detector -->
-    <!--<node name="human_detector" pkg="ras_jetson" type="human_detector.py" />-->
+    <!--<node name="human_detector" pkg="object_detection" type="human_detector.py" />-->
 
     <!-- Web interface -->
-    <include file="$(find ras_jetson)/launch/web.launch" />
+    <include file="$(find object_detection)/launch/web.launch" />
 </launch>

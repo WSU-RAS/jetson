@@ -156,17 +156,17 @@ enough that it errors on importing due to some renames.
 
 The object detection code:
 
-    git clone --recursive https://github.com/WSU-RAS/jetson ras_jetson
+    git clone --recursive https://github.com/WSU-RAS/object_detection.git
     git clone https://github.com/WSU-RAS/cob_perception_msgs
 
 Then, generate the protobuf files:
 
-    cd ~/catkin_ws/src/ras_jetson/models/research/
+    cd ~/catkin_ws/src/object_detection/models/research/
     protoc object_detection/protos/*.proto --python_out=.
 
 Add to your ~/.bashrc file:
 
-    echo 'export PYTHONPATH=$PYTHONPATH:/home/nvidia/catkin_ws/src/ras_jetson/models/research/:/home/nvidia/catkin_ws/src/ras_jetson/models/research/slim/' >> ~/.bashrc
+    echo 'export PYTHONPATH=$PYTHONPATH:/home/nvidia/catkin_ws/src/object_detection/models/research/:/home/nvidia/catkin_ws/src/object_detection/models/research/slim/' >> ~/.bashrc
 
 Build everything:
 
@@ -206,7 +206,7 @@ Then, upload the File -> Sketchbook -> ArbotiX Sketches -> ros.
 
 Setting up on the Jetson so you can control the servos from ROS:
 
-    roslaunch ras_jetson camera.launch
+    roslaunch object_detection camera.launch
     arbotix_gui
 
 ## Connecting to NUC
@@ -244,7 +244,7 @@ Then, run on the NUC:
     cd ~/catkin_ws/src
     git clone https://github.com/WSU-RAS/turtlebot3.git
     git clone https://github.com/WSU-RAS/hls_lfcd_lds_driver.git
-    git clone https://github.com/WSU-RAS/jetson_msgs.git ras_jetson_msgs
+    git clone https://github.com/WSU-RAS/object_detection_msgs.git object_detection_msgs
     cd ..
     catkin_make
 
@@ -254,11 +254,11 @@ Then, run on the NUC:
     roslaunch turtlebot3_bringup turtlebot3_remote.launch
     rosrun rviz rviz -d $(rospack find turtlebot3_description)/rviz/model.rviz
 
-    rosrun ras_jetson_msgs go_to.py
+    rosrun object_detection_msgs go_to.py
 
 Then, run on Jetson:
 
-    roslaunch ras_jetson everything.launch
+    roslaunch object_detection everything.launch
 
     # Optionally either of these, to control the camera
     rosrun arbotix_python arbotix_gui

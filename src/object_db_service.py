@@ -12,8 +12,8 @@ you can use:
 import json
 import rospy
 import redis
-from ras_jetson_msgs.msg import Object
-from ras_jetson_msgs.srv import ObjectQuery, ObjectQueryResponse
+from object_detection_msgs.msg import Object
+from object_detection_msgs.srv import ObjectQuery, ObjectQueryResponse
 
 class ObjectDBService:
     """

@@ -2,7 +2,7 @@
 """
 Example of how to get object locations from the database
 
-rosrun ras_jetson get_object_db.py
+rosrun object_detection get_object_db.py
 """
 import json
 import rospy

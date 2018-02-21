@@ -2,11 +2,11 @@
 """
 Example of how to get object locations from the Object DB Service
 
-rosrun ras_jetson get_object_service.py pillbottle
+rosrun object_detection get_object_service.py pillbottle
 """
 import sys
 import rospy
-from ras_jetson.srv import ObjectQuery, ObjectQueryResponse
+from object_detection.srv import ObjectQuery, ObjectQueryResponse
 
 def getObjectLocation(name):
     rospy.wait_for_service("query_objects")
@@ -26,4 +26,4 @@ if __name__ == '__main__':
         print "Location of \"%s\":" % name
         print getObjectLocation(name)
     else:
-        print "Usage: rosrun ras_jetson get_object_service.py [object]"
+        print "Usage: rosrun object_detection get_object_service.py [object]"

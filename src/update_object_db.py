@@ -10,7 +10,7 @@ locations.
 import json
 import rospy
 import redis
-from ras_jetson_msgs.msg import Object
+from object_detection_msgs.msg import Object
 
 class UpdateObjectDBNode:
     """
