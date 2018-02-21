@@ -1,6 +1,8 @@
 # Path to the folder that has the frozen_inference_graph.pb file in it
-graph_path: "~/networks/ssd_mobilenet_v1.pb"
-#graph_path: "~/networks/ssd_inception_v2.pb"
+#graph_path: "~/networks/ssd_mobilenet_v1.pb"
+graph_path: "~/networks/ssd_inception_v2.pb"
+#graph_path: "~/networks/faster_rcnn_resnet101.pb"
+#graph_path: "~/networks/rfcn_resnet101.pb"
 
 # File with all the label names in it
 labels_path: "~/networks/tf_label_map.pbtxt"
