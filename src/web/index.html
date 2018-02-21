@@ -90,9 +90,6 @@
     oldmsgs = elem.innerHTML.split("\n")
     oldmsg = oldmsgs.slice(0,maxLines).join("\n")
 
-    document.oldmsgs = oldmsgs
-    document.oldmsg = oldmsg
-
     // Update
     elem.innerHTML = message.name + ": " +
         "{ " +

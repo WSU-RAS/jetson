@@ -7,8 +7,20 @@ webpage on the tablet to display videos, prompts, etc.
 """
 import os
 import rospy
+import socket
 import SimpleHTTPServer
 import SocketServer
+
+class ReuseTCPServer(SocketServer.TCPServer):
+    """
+    Reuse the port so that when we kill it we don't have to wait 4 minutes
+    before we can use the port again
+
+    https://stackoverflow.com/a/18858817/2698494
+    """
+    def server_bind(self):
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.socket.bind(self.server_address)
 
 class Server:
     def __init__(self):
@@ -24,7 +36,7 @@ class Server:
 
         # Server
         Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-        self.httpd = SocketServer.TCPServer(("", port), Handler)
+        self.httpd = ReuseTCPServer(("", port), Handler)
         rospy.loginfo("Serving HTTP at port "+str(port))
         rospy.on_shutdown(self.shutdown_hook)
 
@@ -39,6 +51,7 @@ class Server:
         rospy.loginfo("Trying to shutdown server")
         self.shutdown = True # So we don't throw error on killing
         self.httpd.socket.close()
+        self.httpd.server_close()
         #self.httpd.shutdown()
 
 if __name__ == '__main__':
