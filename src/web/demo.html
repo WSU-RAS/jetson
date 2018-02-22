@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <link type="text/css" rel="stylesheet" href="demo.css" media="all" />
+    </head>
+
+    <body>
+        <div id="statusIndicator">
+            <p id="connecting">Connecting to rosbridge...</p>
+            <p id="connected">Connected</p>
+            <p id="error">Error in the backend!</p>
+            <p id="closed">Connection closed.</p>
+        </div>
+
+        <div id="default">
+            <!-- This is the default screen -->
+        </div>
+        <div id="choice">
+            <img id="face" src="">
+
+            <p>Do you want help?</p>
+            <div class="center">
+                <button type="button" id="buttonYes">Yes</button><br>
+                <button type="button" id="buttonNo">No</button>
+            </div>
+        </div>
+        <div id="options">
+            <p>Here are your three options:</p>
+            <div class="center">
+                <button type="button" id="buttonVideoFull">Show video full</button><br>
+                <button type="button" id="buttonVideoStep">Show video step</button><br>
+                <button type="button" id="buttonGoTo">Take me to <div id="object"></div></button>
+            </div>
+        </div>
+        <div id="video">
+            This is a video.
+        </div>
+
+        <script type="text/javascript" src="http://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+        <script type="text/javascript" src="http://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+        <script type="text/javascript" src="demo.js"></script>
+    </body>
+</html>
