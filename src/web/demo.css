@@ -22,13 +22,13 @@ div.center {
 }
 
 button[type="button"] {
-	border: 0;
+    border: 0;
     outline: 0;
     color: white;
     margin: 5px;
     padding: 20px 100px;
     width: 100%;
-	background: DodgerBlue;
-	box-shadow: none;
-	border-radius: 0px;
+    background: DodgerBlue;
+    box-shadow: none;
+    border-radius: 0px;
 }
