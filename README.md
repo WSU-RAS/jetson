@@ -78,7 +78,7 @@ Install TensorFlow
         libxslt1-dev python{,3}-yaml python{,3}-docutils \
         redis-server python{,3}-redis \
         ros-lunar-rosbridge-server ros-lunar-rosbridge-suite \
-        ros-lunar-move-base-msgs \
+        ros-lunar-move-base-msgs ros-lunar-tf2-bullet \
         ros-lunar-rosserial ros-lunar-rosserial-arduino
 
     git clone https://github.com/peterlee0127/tensorflow-tx2.git
@@ -126,64 +126,33 @@ Install ROS ([src](http://wiki.ros.org/lunar/Installation/Ubuntu)):
 
 Create our Catkin workspace:
 
-    mkdir -p ~/catkin_ws/src
-    cd ~/catkin_ws/src
-
-Allow working with the Orbbec Astra camera:
-
-    git clone https://github.com/orbbec/ros_astra_launch.git astra_launch
-    git clone https://github.com/orbbec/ros_astra_camera.git astra_camera
-    git clone https://github.com/ros-drivers/rgbd_launch.git
-
-For working with YOLO:
-
-    git clone --recursive https://github.com/WSU-RAS/darknet_ros.git
-
-Camera Calibration and Depth Sensor:
-
-    git clone https://github.com/ros-perception/image_pipeline
-
-Camera pan/tilt control:
-
-    git clone https://github.com/vanadiumlabs/arbotix_ros.git
-
-Package that allows our code to do coordinate transforms on point clouds.
-There's a package "python-tf2-sensor-msgs" that should do this, but it's old
-enough that it errors on importing due to some renames.
-
-    sudo apt install ros-lunar-tf2-bullet
-    git clone https://github.com/ros/geometry2
-
-The object detection code:
-
-    git clone --recursive https://github.com/WSU-RAS/object_detection.git
-    git clone https://github.com/WSU-RAS/cob_perception_msgs
+    git clone --recursive https://github.com/WSU-RAS/ras_jetson.git
 
 Then, generate the protobuf files:
 
-    cd ~/catkin_ws/src/object_detection/models/research/
+    cd ~/ras_jetson/src/object_detection/models/research/
     protoc object_detection/protos/*.proto --python_out=.
 
 Add to your ~/.bashrc file:
 
-    echo 'export PYTHONPATH=$PYTHONPATH:/home/nvidia/catkin_ws/src/object_detection/models/research/:/home/nvidia/catkin_ws/src/object_detection/models/research/slim/' >> ~/.bashrc
+    echo 'export PYTHONPATH=$PYTHONPATH:/home/nvidia/ras_jetson/src/object_detection/models/research/:/home/nvidia/ras_jetson/src/object_detection/models/research/slim/' >> ~/.bashrc
 
 Build everything:
 
     source /opt/ros/lunar/setup.bash
-    cd ~/catkin_ws
+    cd ~/ras_jetson
     catkin_make --pkg darknet_ros_msgs # Needs to be built before darknet_ros
     catkin_make -DFILTER=OFF -DCMAKE_BUILD_TYPE=Release
 
 Source this new workspace:
 
-    source ~/catkin_ws/devel/setup.bash
-    echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+    source ~/ras_jetson/devel/setup.bash
+    echo "source ~/ras_jetson/devel/setup.bash" >> ~/.bashrc
 
 Setup udev rules for camera, then make sure to unplug then plug back in the
 camera:
 
-    cd ~/catkin_ws/src/astra_camera
+    cd ~/ras_jetson/src/astra_camera
     ./scripts/create_udev_rules
 
 Print [checkerboard](http://wiki.ros.org/camera_calibration/Tutorials/MonocularCalibration?action=AttachFile&do=view&target=check-108.pdf)
@@ -206,7 +175,7 @@ Then, upload the File -> Sketchbook -> ArbotiX Sketches -> ros.
 
 Setting up on the Jetson so you can control the servos from ROS:
 
-    roslaunch object_detection camera.launch
+    roslaunch object_detection pantilt.launch
     arbotix_gui
 
 ## Connecting to NUC
@@ -241,14 +210,11 @@ In *~/.bashrc* on the NUC:
 
 Then, run on the NUC:
 
-    cd ~/catkin_ws/src
-    git clone https://github.com/WSU-RAS/turtlebot3.git
-    git clone https://github.com/WSU-RAS/hls_lfcd_lds_driver.git
-    git clone https://github.com/WSU-RAS/object_detection_msgs.git object_detection_msgs
-    cd ..
+    git clone --recursive https://github.com/WSU-RAS/ras.git
+    cd ras
     catkin_make
 
-    source ~/catkin_ws/devel/setup.bash
+    source ~/ras/devel/setup.bash
     roscore
     roslaunch turtlebot3_bringup turtlebot3_robot.launch
     roslaunch turtlebot3_bringup turtlebot3_remote.launch
@@ -268,16 +234,16 @@ Then, run on Jetson:
 Copy the final weights over for YOLO into the *darknet_ros* directory:
 
     scp path/to/ras-object-detection/datasets/SmartHome/backup_100/SmartHome_final.weights \
-        jetson:catkin_ws/src/darknet_ros/darknet_ros/yolo_network_config/weights/SmartHome.weights
+        jetson:ras_jetson/src/darknet_ros/darknet_ros/yolo_network_config/weights/SmartHome.weights
     scp path/to/ras-object-detection/datasets/SmartHome/config.cfg \
-        jetson:catkin_ws/src/darknet_ros/darknet_ros/yolo_network_config/cfg/SmartHome.cfg
+        jetson:ras_jetson/src/darknet_ros/darknet_ros/yolo_network_config/cfg/SmartHome.cfg
     scp path/to/ras-object-detection/dataset_100.data \
-        jetson:catkin_ws/src/darknet_ros/darknet_ros/config/
+        jetson:ras_jetson/src/darknet_ros/darknet_ros/config/
 
-Create *~/catkin_ws/src/darknet_ros/darknet_ros/config/SmartHome.yaml*,
+Create *~/ras_jetson/src/darknet_ros/darknet_ros/config/SmartHome.yaml*,
 changing the classes accordingly. Make sure the spaces/tabs are correct or else
 it'll error parsing the file. Then change "yolo\_voc.yaml" to "SmartHome.yaml"
-in *~/catkin_ws/src/darknet_ros/darknet_ros/launch/darknet_ros.launch*.
+in *~/ras_jetson/src/darknet_ros/darknet_ros/launch/darknet_ros.launch*.
 
     yolo_model:
         config_file:
@@ -298,6 +264,6 @@ in *~/catkin_ws/src/darknet_ros/darknet_ros/launch/darknet_ros.launch*.
 
 If you don't want it showing the window with predictions, then set
 *enable_opencv* and *use_darknet* to false in
-*~/catkin_ws/src/darknet_ros/darknet_ros/config/ros.yaml*.
+*~/ras_jetson/src/darknet_ros/darknet_ros/config/ros.yaml*.
 
 Edit the *everything.launch* file to use YOLO rather than TensorFlow.
