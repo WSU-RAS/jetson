@@ -67,7 +67,9 @@ ros.on('close', function() {
 });
 
 // Create a connection to the rosbridge WebSocket server.
-ros.connect('ws://tegra-ubuntu:9090');
+//
+// For this demo, we'll assume it's on localhost.
+ros.connect('ws://localhost:9090');
 
 // Calling a service
 // -----------------
