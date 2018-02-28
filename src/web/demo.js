@@ -122,6 +122,15 @@ setBoolServer.advertise(function(request, response) {
 
 function showOne(screen) {
     var screens = ['default','choice','options','video'];
+    
+    var sound = document.getElementById("audio-wrapper");
+    sound.pause();
+    var asource = document.getElementById("audio-source");
+    asource.setAttribute('src', "");
+    var vid = document.getElementById("video-wrapper");
+    vid.pause();
+    var vsource = document.getElementById("video-source");
+    vsource.setAttribute('src', "");
 
     // Hide all others
     for (var i = 0; i < screens.length; ++i)
@@ -136,7 +145,6 @@ function showOne(screen) {
 
 // Multimedia
 function playSound(audioURL) {
-    // TODO
     
     var sound = document.getElementById("audio-wrapper");
     var source = document.getElementById("audio-source");
@@ -146,15 +154,12 @@ function playSound(audioURL) {
     };
     sound.load();
     sound.play();
+    sendROSResponse("audioplay");
 }
 
 function playVideo(url) {
     showOne('video');
 
-    // TODO
-    //  - Show HTML5 video from url argument
-    //  - Call respondVideoDone() when video is done playing
-    
     var vid = document.getElementById("video-wrapper");
     var source = document.getElementById("video-source");
     source.setAttribute('src', url);
@@ -163,11 +168,16 @@ function playVideo(url) {
     };
     vid.load();
     vid.play();
+    sendROSResponse("videoplay");
 }
 
 // Show screen
 function showDefault() {
     showOne('default');
+    if (this.state.faceURL.length > 0) {
+        document.getElementById("default-face").src = this.state.faceURL;
+        document.getElementById("default-face").load();
+    }
 }
 function showChoice() {
     showOne('choice');

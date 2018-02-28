@@ -7,60 +7,54 @@
     </head>
 
     <body>
-        <div class="container" style="margin-left:0px; margin-right:0px;">
-            <div class="row" style="margin-top:8px;">
-                <div class="col">
-                    <div id="statusIndicator">
-                        <p id="connecting">Connecting to rosbridge...</p>
-                        <p id="connected">Connected</p>
-                        <p id="error">Error in the backend!</p>
-                        <p id="closed">Connection closed.</p>
-                    </div>
-                </div>
+        <div id="statusIndicator">
+            <p id="connecting">Connecting to rosbridge...</p>
+            <p id="connected">Connected</p>
+            <p id="error">Error in the backend!</p>
+            <p id="closed">Connection closed.</p>
+        </div>
+        
+        <div id="default">
+            <div class="text-center">
+                <img id="default-face" src="">
             </div>
-            
-            
-            <div class="row justify-content-center" id="default">
-                <div class="col">
-                    <!-- This is the default screen -->
-                    <h3>This is the default screen</h3>
-                </div>
-            </div>
-            <div class="row justify-content-center" id="choice">
-                <div class="col">
-                    <audio id="audio-wrapper">
-                        <source src="" id="audio-source">
-                        Your browser does not support the audio element.
-                    </audio>
-                    
-                    <img id="face" src="">
+        </div>
 
-                    <h1>Do you want help?</h1>
-                    <div class="center">
-                        <button class="btn btn-default btn-primary" type="button" id="buttonYes">Yes</button><br>
-                        <button class="btn btn-default btn-primary" type="button" id="buttonNo">No</button>
-                    </div>
-                </div>
+        <div id="choice" class="center">
+            <audio id="audio-wrapper">
+                <source src="" id="audio-source">
+                Your browser does not support the audio element.
+            </audio>
+            
+            <div class="text-center">
+                <img id="face" src="">
             </div>
-            <div class="row justify-content-center" id="options">
-                <div class="col">
-                    <p>Here are your three options:</p>
-                    <div class="center">
-                        <button type="button" id="buttonVideoFull">Show video full</button><br>
-                        <button type="button" id="buttonVideoStep">Show video step</button><br>
-                        <button type="button" id="buttonGoTo">Take me to <div id="object"></div></button>
-                    </div>
-                </div>
+            
+            <div class="text-center">
+                <h1 class="display-2">Do you want help?</h1>
             </div>
-            <div class="row justify-content-center" id="video">
-                <div class="col center">
-                    <h3>Video screen</h3>
-                    <video id="video-wrapper">
-                        <source src="" id="video-source">
-                        Your browser does not support HTML5 video.
-                    </video>
-                </div>
+            <br><br>
+            
+            <button class="btn btn-default btn-primary" type="button" id="buttonYes"><h1 class="display-3">Yes</h1></button><br><br><br><br>
+            <button class="btn btn-default btn-primary" type="button" id="buttonNo"><h1 class="display-3">No</h1></button>
+        </div>
+
+        <div id="options" class="center">
+            <br><br>
+            <div class="text-center">
+                <h1 class="display-2">Here are your three options:</h1>
             </div>
+            <br><br><br><br>
+            <button type="button" id="buttonVideoFull"><h1 class="display-3">Show video full</h1></button><br><br><br><br>
+            <button type="button" id="buttonVideoStep"><h1 class="display-3">Show video step</h1></button><br><br><br><br>
+            <button type="button" id="buttonGoTo"><h1 class="display-3">Take me to <div id="object"></div></h1></button>
+        </div>
+
+        <div id="video" class="center">
+            <video id="video-wrapper" width="100%">
+                <source src="" id="video-source">
+                Your browser does not support HTML5 video.
+            </video>
         </div>
 
         <script type="text/javascript" src="http://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
