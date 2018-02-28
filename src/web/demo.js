@@ -69,7 +69,7 @@ ros.on('close', function() {
 // Create a connection to the rosbridge WebSocket server.
 //
 // For this demo, we'll assume it's on localhost.
-ros.connect('ws://localhost:9090');
+ros.connect('ws://brian-gpu.ailab.wsu.edu:9090');
 
 // Calling a service
 // -----------------
@@ -137,6 +137,15 @@ function showOne(screen) {
 // Multimedia
 function playSound(audioURL) {
     // TODO
+    
+    var sound = document.getElementById("audio-wrapper");
+    var source = document.getElementById("audio-source");
+    source.setAttribute('src', audioURL);
+    sound.onended = function() {
+        respondAudioDone();
+    };
+    sound.load();
+    sound.play();
 }
 
 function playVideo(url) {
@@ -145,6 +154,15 @@ function playVideo(url) {
     // TODO
     //  - Show HTML5 video from url argument
     //  - Call respondVideoDone() when video is done playing
+    
+    var vid = document.getElementById("video-wrapper");
+    var source = document.getElementById("video-source");
+    source.setAttribute('src', url);
+    vid.onended = function() {
+        respondVideoDone();
+    };
+    vid.load();
+    vid.play();
 }
 
 // Show screen
@@ -153,6 +171,7 @@ function showDefault() {
 }
 function showChoice() {
     showOne('choice');
+    playSound(this.state.audioURL);
     document.getElementById("face").src = this.state.faceURL;
 }
 function showOptions() {
@@ -209,6 +228,12 @@ function respondVideoDone() {
     // Probably go back to options? Maybe manager node will send another
     // command.
     showDefault();
+}
+function respondAudioDone() {
+    sendROSResponse("audiodone");
+
+    // Probably go back to options? Maybe manager node will send another
+    // command.
 }
 
 // Selecting buttons
