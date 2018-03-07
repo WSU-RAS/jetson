@@ -50,6 +50,7 @@ class ObjectDBService:
             for r in data:
                 o = Object()
                 o.name = r["name"]
+                o.time = r["time"]
                 o.x = r["x"]
                 o.y = r["y"]
                 o.z = r["z"]

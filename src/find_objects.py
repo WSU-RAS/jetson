@@ -19,6 +19,7 @@ Publishes to:
 """
 import rospy
 import copy
+import datetime
 import numpy as np
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import PointStamped
@@ -174,6 +175,7 @@ class FindObjectsNode:
                     # Publish object update
                     msg = Object()
                     msg.name = b.Class
+                    msg.time = datetime.datetime.now().isoformat()
                     msg.x = p[0]
                     msg.y = p[1]
                     msg.z = p[2]

@@ -38,11 +38,13 @@ class UpdateObjectDBNode:
         """
         Save the object location when we see it
         """
+
         try:
             # TODO support multiple of the same object
             # Save an array of object locations
             self.redis.set(self.prefix+"_"+data.name, json.dumps([{
                     "name": data.name,
+                    "time": data.time,
                     "x": data.x,
                     "y": data.y,
                     "z": data.z
