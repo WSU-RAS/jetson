@@ -10,6 +10,7 @@ The two parts:
    object to process and then publishes the results in a message.
 """
 import os
+import cv2
 import time
 import numpy as np
 import tensorflow as tf
@@ -225,7 +226,7 @@ class ObjectDetectorNode:
     with ObjectDetectorNode() as node:
         rospy.spin()
     """
-    def __init__(self, averageFPS=60):
+    def __init__(self, averageFPS=30):
         # We'll publish the results
         #self.pub = rospy.Publisher('object_detector', DetectionArray, queue_size=10)
         self.pub = rospy.Publisher('object_detector', BoundingBoxes, queue_size=10)
@@ -238,7 +239,13 @@ class ObjectDetectorNode:
         labels_path = os.path.expanduser(rospy.get_param("~labels_path"))
         threshold = rospy.get_param("~threshold", 0.5)
         memory = rospy.get_param("~memory", 0.5) # 0 to 1
+        self.debugImage = rospy.get_param("~debugImage", False)
         camera_namespace = rospy.get_param("~camera_namespace", "/camera/rgb/image_rect_color")
+
+        # Debug images
+        if self.debugImage:
+            self.pubImage = rospy.Publisher(
+                    "/detection_image", Image, queue_size=1)
 
         # Object Detector
         self.detector = ObjectDetector(graph_path, labels_path, threshold, memory)
@@ -265,6 +272,20 @@ class ObjectDetectorNode:
         """
         return sum(list(self.fps))/len(self.fps)
 
+    def imageMsg(self, data, image_np, boxes, scores, classes):
+        """
+        Create the debug image with bounding boxes on it
+        """
+        vis_util.visualize_boxes_and_labels_on_image_array(
+            image_np,
+            np.squeeze(boxes),
+            np.squeeze(classes).astype(np.int32),
+            np.squeeze(scores),
+            self.detector.category_index,
+            use_normalized_coordinates=True, line_thickness=8)
+
+        return self.bridge.cv2_to_imgmsg(image_np, encoding="bgr8")
+
     def rgb_callback(self, data):
         #print("Object Detection frame at %s" % rospy.get_time())
         fps = time.time()
@@ -275,6 +296,9 @@ class ObjectDetectorNode:
             boxes, scores, classes = self.detector.process(image_np)
             #self.pub.publish(self.detector.msgCOB(data, boxes, scores, classes))
             self.pub.publish(self.detector.msgDN(data, boxes, scores, classes))
+
+            if self.debugImage:
+                self.pubImage.publish(self.imageMsg(data, image_np, boxes, scores, classes))
         except CvBridgeError as e:
             rospy.logerr(e)
             error = "(error)"
