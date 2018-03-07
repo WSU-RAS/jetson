@@ -21,10 +21,4 @@
     <!-- Zero the pan tilt so camera is in a good position -->
     <include file="$(find object_detection)/launch/pantilt.launch" />
     <node name="zero_pan_tilt" pkg="object_detection" type="zero_pan_tilt.py" />
-
-    <!-- Human detector -->
-    <!--<node name="human_detector" pkg="object_detection" type="human_detector.py" />-->
-
-    <!-- Web interface -->
-    <include file="$(find object_detection)/launch/web.launch" />
 </launch>
