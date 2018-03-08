@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <launch>
     <!-- Note: if you change either of these, you might want to clear the
-         object
-         database since all the (x,y,z) points will now be different -->
+         object database since all the (x,y,z) points will now be different -->
     <arg name="target" default="map" />
     <arg name="source" default="camera_depth_optical_frame" />
+    <arg name="maxpoints" default="1000" />
     <arg name="debug" default="True" />
 
     <node name="find_objects" pkg="object_detection" type="find_objects.py">
@@ -12,6 +12,7 @@
              to the map, not the camera frame -->
          <param name="target" value="$(arg target)" />
          <param name="source" value="$(arg source)" />
+         <param name="maxpoints" value="$(arg maxpoints)" />
          <param name="debug" value="$(arg debug)" />
     </node>
 </launch>

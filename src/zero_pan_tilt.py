@@ -55,10 +55,10 @@ def main():
     traj = Trajectory()
     rospy.on_shutdown(traj.stop)
 
-    while not rospy.is_shutdown():
-        traj.add_point([0.0, 0.7], 1.0) # pan, tilt, time to get there
-        traj.start()
-        traj.wait(5.0)
+    # Set it once then exit
+    traj.add_point([0.0, 0.7], 1.0) # pan, tilt, time to get there
+    traj.start()
+    traj.wait(5.0)
 
 if __name__ == "__main__":
     main()

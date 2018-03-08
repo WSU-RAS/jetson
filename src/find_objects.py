@@ -17,6 +17,7 @@ Publishes to:
                     the given bounding boxes
     /find_objects_debug - PointStamped x, y, z of last object found
 """
+import math
 import rospy
 import copy
 import datetime
@@ -54,6 +55,7 @@ class FindObjectsNode:
         # Params
         self.target = rospy.get_param("~target", "map")
         self.source = rospy.get_param("~source", "camera_depth_optical_frame")
+        self.maxpoints = rospy.get_param("~maxpoints", 50)
         self.debug = rospy.get_param("~debug", False)
 
         # For debugging also publish a point that we can vizualize in rviz
@@ -142,8 +144,38 @@ class FindObjectsNode:
                 # Note: (u,v) is in image, (x,y,z) is in 3D space
                 uvs = []
 
-                for x in range(b.xmin, b.xmax+1):
-                    for y in range(b.ymin, b.ymax+1):
+                # This is too slow if we look at all the points in the bounding
+                # box, so if we have more than a certain threshold, only look
+                # at that many in the center
+                xmin = b.xmin
+                xmax = b.xmax
+                ymin = b.ymin
+                ymax = b.ymax
+                w = xmax-xmin
+                h = ymax-ymin
+
+                if w*h > self.maxpoints and w > 0 and h > 0:
+                    # Keep aspect ratio the same, but make new area (number of
+                    # points) be maxpoints
+                    wnew = math.ceil(math.sqrt(1.0*self.maxpoints*w/h))
+                    hnew = math.ceil(1.0*wnew*h/w)
+
+                    # Find center point
+                    xcenter = math.floor(xmin + 0.5*w)
+                    ycenter = math.floor(ymin + 0.5*h)
+
+                    # New coordinates
+                    xmin = int(math.floor(xcenter - 0.5*wnew))
+                    xmax = int(math.floor(xcenter + 0.5*wnew))
+                    ymin = int(math.floor(ycenter - 0.5*hnew))
+                    ymax = int(math.floor(ycenter + 0.5*hnew))
+
+                    # DEBUG
+                    #rospy.logwarn("Original: "+str(w)+"x"+str(h)+"("+str(w*h)+\
+                    #        ") New: "+str(wnew)+"x"+str(hnew)+"("+str(wnew*hnew)+")")
+
+                for x in range(xmin, xmax+1):
+                    for y in range(ymin, ymax+1):
                         uvs.append((x,y))
 
                 # Get the points from the point cloud, but ignore NaNs
