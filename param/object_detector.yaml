@@ -14,7 +14,7 @@ camera_namespace: "/camera/rgb/image_rect_color"
 threshold: 0.70
 
 # Maximum amount of system memory to use in TensorFlow, in range 0 - 1
-memory: 0.5
+memory: 0.4
 
 # Output debug images
 debugImage: true

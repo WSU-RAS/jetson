@@ -25,7 +25,7 @@ class Trajectory(object):
             FollowJointTrajectoryAction,
         )
         self._goal = FollowJointTrajectoryGoal()
-        server_up = self._client.wait_for_server(timeout=rospy.Duration(10.0))
+        server_up = self._client.wait_for_server(timeout=rospy.Duration(60.0))
         if not server_up:
             rospy.logerr("Timed out waiting for Joint Trajectory"
                          " Action Server to connect. Start arbotix node.")
@@ -42,7 +42,7 @@ class Trajectory(object):
         self._client.send_goal(self._goal)
     def stop(self):
         self._client.cancel_goal()
-    def wait(self, timeout=15.0):
+    def wait(self, timeout=30.0):
         self._client.wait_for_result(timeout=rospy.Duration(timeout))
     def result(self):
         return self._client.get_result()
@@ -58,7 +58,7 @@ def main():
     # Set it once then exit
     traj.add_point([0.0, 0.7], 1.0) # pan, tilt, time to get there
     traj.start()
-    traj.wait(5.0)
+    traj.wait(30.0)
 
 if __name__ == "__main__":
     main()
