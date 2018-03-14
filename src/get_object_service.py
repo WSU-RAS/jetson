@@ -37,6 +37,8 @@ def getObjectLocation(name):
     except rospy.ServiceException, e:
         print "Service call failed: %s" % e
 
+    return None
+
 if __name__ == '__main__':
     rospy.init_node("get_object_demo")
 
