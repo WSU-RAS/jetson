@@ -56,7 +56,7 @@ def main():
     rospy.on_shutdown(traj.stop)
 
     # Set it once then exit
-    traj.add_point([0.0, 0.7], 1.0) # pan, tilt, time to get there
+    traj.add_point([0.0, 0.25], 1.0) # pan, tilt, time to get there
     traj.start()
     traj.wait(30.0)
 

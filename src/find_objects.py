@@ -207,7 +207,7 @@ class FindObjectsNode:
                     # Publish object update
                     msg = Object()
                     msg.name = b.Class
-                    msg.time = datetime.datetime.now().isoformat()
+                    msg.time = datetime.datetime.utcnow().isoformat()
                     msg.x = p[0]
                     msg.y = p[1]
                     msg.z = p[2]
