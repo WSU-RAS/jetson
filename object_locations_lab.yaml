@@ -1,0 +1,65 @@
+base1:
+    x: 0
+    y: 0
+    z: 0
+    w: 1
+base2:
+    x: 1
+    y: 0
+    z: 0
+    w: 1
+base3:
+    x: 2
+    y: 0
+    z: 0
+    w: 1
+glass:
+    x: 4
+    y: 0
+    z: 0
+    w: 1
+pillbottle:
+    x: 4
+    y: 0
+    z: 0
+    w: 1
+leash:
+    x: 4
+    y: 0
+    z: 0
+    w: 1
+keys:
+    x: 4
+    y: 0
+    z: 0
+    w: 1
+food:
+    x: 4
+    y: 0
+    z: 0
+    w: 1
+umbrella:
+    x: 4
+    y: 0
+    z: 0
+    w: 1
+dog:
+    x: 4
+    y: 0
+    z: 0
+    w: 1
+plantcoffee:
+    x: 4
+    y: 0
+    z: 0
+    w: 1
+plantside:
+    x: 4
+    y: 0
+    z: 0
+    w: 1
+watercan:
+    x: 4
+    y: 0
+    z: 0
+    w: 1

@@ -28,7 +28,6 @@ class UpdateObjectDBNode:
         self.server = rospy.get_param("~server", "localhost")
         self.port   = rospy.get_param("~port", "6379")
         self.prefix = rospy.get_param("~prefix", "object")
-
         self.redis = redis.StrictRedis(host=self.server, port=self.port, db=0)
 
         # Listen to object locations that are published

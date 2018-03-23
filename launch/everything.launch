@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <launch>
+    <!-- For our experiments, fake the object locations -->
+    <arg name="object_locations" default="$(find object_detection)/object_locations_lab.yaml" />
+
     <!-- Start camera, but don't override model of where camera is -->
     <include file="$(find astra_launch)/launch/astra.launch">
         <arg name="publish_tf" value="false" />
@@ -16,7 +19,9 @@
     <include file="$(find object_detection)/launch/update_object_db.launch" />
 
     <!-- Service to query object locations from the database -->
-    <node name="object_db_service" pkg="object_detection" type="object_db_service.py" />
+    <node name="object_db_service" pkg="object_detection" type="object_db_service.py">
+         <param name="file" value="$(arg object_locations)" />
+    </node>
 
     <!-- Zero the pan tilt so camera is in a good position -->
     <include file="$(find object_detection)/launch/pantilt.launch" />
