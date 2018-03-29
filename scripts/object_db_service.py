@@ -54,6 +54,7 @@ class ObjectDBService:
         Respond to the request for an object's location
         """
         results = []
+        fake = False
 
         # Load from the file if specified and if it's in the file
         #
@@ -73,6 +74,7 @@ class ObjectDBService:
                     "z": self.locations[req.name]["z"],
                     "w": self.locations[req.name]["w"]
                     }]
+            fake = True
         else:
             data = self.redis.get(self.prefix+"_"+req.name)
 
@@ -87,7 +89,11 @@ class ObjectDBService:
             o.time = r["time"]
             o.x = r["x"]
             o.y = r["y"]
-            o.z = r["z"]
+
+            if fake:
+                o.z = r["z"]
+            else:
+                o.z = 0
 
             # We actually aren't saving w's in the database but do have it when
             # loading from a file
