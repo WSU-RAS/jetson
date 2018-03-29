@@ -9,6 +9,7 @@ Based on:
 http://sdk.rethinkrobotics.com/wiki/Joint_Trajectory_Client_-_Code_Walkthrough
 """
 import sys
+import time
 import rospy
 import argparse
 import actionlib
@@ -54,6 +55,8 @@ def main():
     rospy.init_node('pan_tilt')
     traj = Trajectory()
     rospy.on_shutdown(traj.stop)
+
+    time.sleep(30)
 
     # Set it once then exit
     traj.add_point([0.0, 0.25], 1.0) # pan, tilt, time to get there
