@@ -73,6 +73,11 @@ entryway:
     y: 0.0954388
     z: -0.375413
     w: 0.926857
+sink:
+    x: 5.836
+    y: 2.787
+    z: 0.704
+    w: 0.711
 # Inbetween points for bases and stuff n thangs
 # base -> base -> step
 b2_b1_1:
