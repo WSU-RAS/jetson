@@ -18,6 +18,13 @@ glass:
     y: 2.72521
     z: 0.696842
     w: 0.717225
+# Pills is for when they are sitting down and forget to take pills
+# The code will be setup to effectively ignore pills since RAS will be there already
+pills:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+    w: 0.0
 pillbottle:
     x: 3.45414
     y: 2.88004
