@@ -12,7 +12,6 @@ The two parts:
 import os
 import cv2
 import time
-import pathlib
 import numpy as np
 import tensorflow as tf
 
@@ -438,6 +437,22 @@ class ObjectDetectorNode(ObjectDetectorBase):
         except CvBridgeError as e:
             rospy.logerr(e)
 
+def find_files(folder, prefix="rgb", extension=".png"):
+    """
+    Find all files recursively in specified folder with a particular
+    prefix and extension
+
+    (for running on set of test images)
+    """
+    files = []
+
+    for dirname, dirnames, filenames in os.walk(folder):
+        for filename in filenames:
+            if filename.startswith(prefix) and filename.endswith(extension):
+                files += [(dirname, filename)]
+
+    return files
+
 class DummyImageMsg:
     """ Allow for using same functions as in the ROS code to get width/height
     and header from some ROS image message """
@@ -452,7 +467,7 @@ class OfflineObjectDetector(ObjectDetectorBase):
         super(OfflineObjectDetector, self).__init__(*args, **kwargs)
 
     def run(self, test_image_dir, show_image=True):
-        test_images = [str(f) for f in pathlib.Path(test_image_dir).glob("*")]
+        test_images = [os.path.join(d, f) for d, f in find_files(test_image_dir)]
 
         try:
             for i, filename in enumerate(test_images):
