@@ -438,22 +438,6 @@ class ObjectDetectorNode(ObjectDetectorBase):
         except CvBridgeError as e:
             rospy.logerr(e)
 
-def findFiles(folder, prefix="rgb", extension=".png"):
-    """
-    Find all files recursively in specified folder with a particular
-    prefix and extension
-
-    (for running on set of test images)
-    """
-    files = []
-
-    for dirname, dirnames, filenames in os.walk(folder):
-        for filename in filenames:
-            if filename.startswith(prefix) and filename.endswith(extension):
-                files += [(dirname, filename)]
-
-    return files
-
 class DummyImageMsg:
     """ Allow for using same functions as in the ROS code to get width/height
     and header from some ROS image message """
