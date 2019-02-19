@@ -12,19 +12,41 @@ The two parts:
 import os
 import cv2
 import time
+import pathlib
 import numpy as np
 import tensorflow as tf
+
 from collections import deque
+from tensorflow.contrib.lite.python import interpreter as interpreter_wrapper
 
- # Visualization for debugging
+# Visualization for debugging
+import matplotlib
+matplotlib.use('TkAgg')
+
 from PIL import Image
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
-# ROS
-import rospy
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError
-from darknet_ros_msgs.msg import BoundingBoxes, BoundingBox
+# ROS (but don't require since not needed for offline mode)
+try:
+    import rospy
+    from sensor_msgs.msg import Image
+    from cv_bridge import CvBridge, CvBridgeError
+    from darknet_ros_msgs.msg import BoundingBoxes, BoundingBox
+except ImportError:
+    class BoundingBoxes:
+        def __init__(self):
+            self.header = None
+            self.boundingBoxes = []
+
+    class BoundingBox:
+        def __init__(self):
+            self.Class = None
+            self.probability = None
+            self.xmin = None
+            self.xmax = None
+            self.ymin = None
+            self.ymax = None
 
 def load_image_into_numpy_array(image):
     """
@@ -88,7 +110,7 @@ def low_level_detection_show(image_np, detection_msg, color=[255,0,0], amt=1):
         # bottom edge
         image_np[r.ymax-amt:r.ymax+amt, r.xmin-amt:r.xmax+amt, :] = color
 
-def detection_msg(image, boxes, scores, classes, labels, min_score):
+def create_detection_msg(image, boxes, scores, classes, labels, min_score):
     """
     Create the Object Detector message to publish with ROS
 
@@ -202,7 +224,7 @@ class TFObjectDetector:
             feed_dict={self.image_tensor: image_np_expanded})
 
         # Make detection message
-        return detection_msg(image, boxes, scores, classes,
+        return create_detection_msg(image, boxes, scores, classes,
             self.labels, self.min_score)
 
 class TFLiteObjectDetector:
@@ -278,11 +300,11 @@ class TFLiteObjectDetector:
                 detection_classes = (detection_classes - class_mean * 1.0) * class_scale
 
         # Make detection message
-        return detection_msg(image,
+        return create_detection_msg(image,
             detection_boxes, detection_scores, detection_classes,
             self.labels, self.min_score)
 
-class ObjectDetectorBase:
+class ObjectDetectorBase(object):
     """ Wrap detector to calculate FPS """
     def __init__(self, model_file, labels_path, min_score=0.5, memory=0.5,
             average_fps_frames=30, debug=True, lite=True):
@@ -346,8 +368,8 @@ class ObjectDetectorBase:
             self.stream_fps.append(stream_fps)
             self.process_end_last = now
 
-            print "Object Detection",
-                "Process FPS", "{:<5}".format("%.2f"%self.avg_fps()),
+            print "Object Detection", \
+                "Process FPS", "{:<5}".format("%.2f"%self.avg_fps()), \
                 "Stream FPS", "{:<5}".format("%.2f"%self.avg_stream_fps())
 
         return detections
@@ -394,7 +416,7 @@ class ObjectDetectorNode(ObjectDetectorBase):
         self.sub = rospy.Subscriber(camera_namespace, Image, self.rgb_callback, queue_size=1, buff_size=2**24)
 
         # Initialize object detector -- the base class with arguments from ROS
-        super().__init__(graph_path, labels_path, threshold, memory)
+        super(ObjectDetectorNode, self).__init__(graph_path, labels_path, threshold, memory)
 
     def image_msg(self, image_np, detection_msg):
         """
@@ -443,10 +465,10 @@ class DummyImageMsg:
 class OfflineObjectDetector(ObjectDetectorBase):
     """ Run object detection on already captured images """
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(OfflineObjectDetector, self).__init__(*args, **kwargs)
 
     def run(self, test_image_dir, show_image=True):
-        test_images = [os.path.join(d, f) for d, f in find_files(test_image_dir)]
+        test_images = [str(f) for f in pathlib.Path(test_image_dir).glob("*")]
 
         try:
             for i, filename in enumerate(test_images):
@@ -464,20 +486,21 @@ class OfflineObjectDetector(ObjectDetectorBase):
                 detection_msg = self.process(img, resize_img)
 
                 if self.debug:
-                    for i, d in enumerate(detection_msg):
-                        print "Result "+str(i)+":", d
+                    for i, d in enumerate(detection_msg.boundingBoxes):
+                        print "Result "+str(i)+":", d.Class, d.probability, d.xmin, d.xmax, d.ymin, d.ymax
 
                 detection_show(orig_img, detection_msg, show_image)
         except KeyboardInterrupt:
             pass
 
 if __name__ == '__main__':
-    offline = False
+    offline = True
 
     if offline:
-        model = "../networks/ssd_mobilenet_v1.pb"
-        labels = "../networks/labels.txt"
-        with OfflineObjectDetector(model, labels, lite=False) as d:
+        #model = "networks/ssd_mobilenet_v1_laptop.pb"
+        model = "networks/ssd_mobilenet_v1_laptop.tflite"
+        labels = "networks/labels_laptop.txt"
+        with OfflineObjectDetector(model, labels, lite=True) as d:
             d.run("test_images", show_image=True)
     else:
         try:
