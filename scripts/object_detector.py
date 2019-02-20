@@ -494,7 +494,7 @@ class OfflineObjectDetector(ObjectDetectorBase):
             pass
 
 if __name__ == '__main__':
-    offline = False
+    offline = True
 
     if offline:
         #model = "networks/ssd_mobilenet_v1_laptop.pb"
