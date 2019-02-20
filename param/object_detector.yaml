@@ -4,8 +4,8 @@
 #graph_path: "~/networks/faster_rcnn_resnet101.pb"
 #graph_path: "~/networks/rfcn_resnet101.pb"
 
-graph_path: "~/networks/ssd_mobilenet_v1_laptop.pb"
-#graph_path: "~/networks/ssd_mobilenet_v1_laptop.tflite"
+#graph_path: "~/networks/ssd_mobilenet_v1_laptop.pb"
+graph_path: "~/networks/ssd_mobilenet_v1_laptop.tflite"
 
 # File with all the label names in it
 #labels_path: "~/networks/tf_label_map.pbtxt"

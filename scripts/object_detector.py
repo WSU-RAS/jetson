@@ -16,11 +16,7 @@ import numpy as np
 import tensorflow as tf
 
 from collections import deque
-
-try:
-    from tensorflow.contrib.lite.python import interpreter as interpreter_wrapper
-except ImportError:
-    print "TF too old, cannot use TF lite"
+from tensorflow.contrib.lite.python import interpreter as interpreter_wrapper
 
 # Visualization for debugging
 import matplotlib
@@ -392,7 +388,7 @@ class ObjectDetectorNode(ObjectDetectorBase):
     with ObjectDetectorNode() as node:
         rospy.spin()
     """
-    def __init__(self, lite=False):
+    def __init__(self):
         # We'll publish the results
         self.pub = rospy.Publisher('object_detector', BoundingBoxes, queue_size=10)
 
@@ -419,7 +415,7 @@ class ObjectDetectorNode(ObjectDetectorBase):
         self.sub = rospy.Subscriber(camera_namespace, Image, self.rgb_callback, queue_size=1, buff_size=2**24)
 
         # Initialize object detector -- the base class with arguments from ROS
-        super(ObjectDetectorNode, self).__init__(graph_path, labels_path, threshold, memory, lite=lite)
+        super(ObjectDetectorNode, self).__init__(graph_path, labels_path, threshold, memory)
 
     def image_msg(self, image_np, detection_msg):
         """
