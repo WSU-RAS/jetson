@@ -432,7 +432,7 @@ class ObjectDetectorNode(ObjectDetectorBase):
         try:
             # TODO do we need a resize here to 300x300?
             image_np = self.bridge.imgmsg_to_cv2(image, "bgr8")
-            detection_msg = self.process(image, image_np)
+            detection_msg = self.detector.process(image, image_np)
             self.pub.publish(detection_msg)
 
             if self.debugImage:
