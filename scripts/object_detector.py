@@ -24,7 +24,15 @@ from matplotlib import pyplot as plt
 import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
+
+# Messages, either from COB or Darknet's
+# From: https://github.com/ipa320/cob_perception_common in cob_perception_msgs
+from cob_perception_msgs.msg import Detection, DetectionArray, Rect
 from darknet_ros_msgs.msg import BoundingBoxes, BoundingBox
+
+# Note: must have models/research/ and models/research/slim/ in PYTHONPATH
+from object_detection.utils import label_map_util
+from object_detection.utils import visualization_utils as vis_util
 
 def load_image_into_numpy_array(image):
     """
@@ -33,110 +41,27 @@ def load_image_into_numpy_array(image):
     (im_width, im_height) = image.size
     return np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
 
-def load_labels(filename):
+class ObjectDetector:
     """
-    Load labels from the label file
-
-    Note: this is not the tf_label_map.pbtxt, instead just one label per line.
-    """
-    labels = []
-
-    with open(filename, 'r') as f:
-        for l in f:
-            labels.append(l.strip())
-
-    return labels
-
-def detection_show(image_np, detection_msg, show_image=True, debug_image_size=(12,8)):
-    """ For debugging, show the image with the bounding boxes """
-    if len(detection_msg.boundingBoxes) == 0:
-        return
-
-    if show_image:
-        plt.ion()
-        fig, ax = plt.subplots(1, figsize=debug_image_size, num=1)
-
-    for r in detection_msg.boundingBoxes:
-        if show_image:
-            topleft = (r.xmin, r.ymin)
-            width = r.xmax - r.xmin
-            height = r.ymax - r.ymin
-
-            rect = patches.Rectangle(topleft, width, height, \
-                linewidth=1, edgecolor='r', facecolor='none')
-
-            # Add the patch to the Axes
-            ax.add_patch(rect)
-            ax.text(r.xmin, r.ymin, r.Class+": %.2f"%r.probability, fontsize=6,
-                bbox=dict(facecolor="y", edgecolor="y", alpha=0.5))
-
-    if show_image:
-        ax.imshow(image_np)
-        fig.canvas.flush_events()
-        #plt.pause(0.05)
-
-def low_level_detection_show(image_np, detection_msg, color=[255,0,0], amt=1):
-    """ Overwrite portions on input image with red to display via GStreamer rather than
-    with matplotlib which is slow """
-    for r in detection_msg.boundingBoxes:
-        # left edge
-        image_np[r.ymin-amt:r.ymax+amt, r.xmin-amt:r.xmin+amt, :] = color
-        # right edge
-        image_np[r.ymin-amt:r.ymax+amt, r.xmax-amt:r.xmax+amt, :] = color
-        # top edge
-        image_np[r.ymin-amt:r.ymin+amt, r.xmin-amt:r.xmax+amt, :] = color
-        # bottom edge
-        image_np[r.ymax-amt:r.ymax+amt, r.xmin-amt:r.xmax+amt, :] = color
-
-def detection_msg(image, boxes, scores, classes, labels, min_score):
-    """
-    Create the Object Detector message to publish with ROS
-
-    This uses the Darknet BoundingBox[es] messages
-    """
-    msg = BoundingBoxes()
-    msg.header = image.header
-    scores_above_threshold = np.where(scores > min_score)[1]
-
-    for s in scores_above_threshold:
-        # Get the properties
-        bb = boxes[0,s,:]
-        sc = scores[0,s]
-        cl = classes[0,s]
-
-        # Create the bounding box message
-        detection = BoundingBox()
-        detection.Class = labels[int(cl)]
-        detection.probability = sc
-        detection.xmin = int((image.width-1) * bb[1])
-        detection.ymin = int((image.height-1) * bb[0])
-        detection.xmax = int((image.width-1) * bb[3])
-        detection.ymax = int((image.height-1) * bb[2])
-
-        msg.boundingBoxes.append(detection)
-
-    return msg
-
-class TFObjectDetector:
-    """
-    Object Detection with TensorFlow model trained with
-    models/research/object_detection (Non-TF Lite version)
+    Object Detection with TensorFlow via their models/research/object_detection
 
     Based on:
     https://github.com/tensorflow/models/blob/master/research/object_detection/object_detection_tutorial.ipynb
 
-    Usage:
-        with TFObjectDetector("path/to/model_dir.pb", "path/to/labels.txt", 0.5)
-            detection_msg = d.process(image, image_np)
-    """
-    def __init__(self, graph_path, labels_path, min_score,
-            memory=0.5, width=300, height=300):
-        # Prune based on score
-        self.min_score = min_score
 
-        # Model dimensions
-        self.model_input_height = height
-        self.model_input_width = width
+    Usage:
+        with ObjectDetectorTF("path/to/model_dir.pb", "path/to/tf_label_map.pbtxt") as detector:
+            boxes, scores, classes = detector.process(newImage)
+
+    Or:
+        detector = ObjectDetectorTF("path/to/model_dir.pb", "path/to/tf_label_map.pbtxt")
+        detector.open()
+        boxes, scores, classes = detector.process(newImage)
+        detector.close()
+    """
+    def __init__(self, graph_path, labels_path, threshold, memory):
+        # Threshold for what to count as objects
+        self.threshold = threshold
 
         # Max memory usage (0 - 1)
         self.memory = memory
@@ -152,11 +77,19 @@ class TFObjectDetector:
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
 
-        # Load label map -- index starts with 1 for the non-TF Lite version
-        self.labels = ["???"] + load_labels(labels_path)
+
+        # Load label map
+        label_map = label_map_util.load_labelmap(labels_path)
+        numClasses = len(label_map.item) # Use all classes
+        categories = label_map_util.convert_label_map_to_categories(label_map,
+                        max_num_classes=numClasses, use_display_name=True)
+        self.category_index = label_map_util.create_category_index(categories)
 
     def open(self):
-        # Config options: max GPU memory to use.
+        # Config options: max GPU memory to use. This is important since on the
+        # Jetson TX2 the GPU and main memory are shared. So, if TF tries to use
+        # lots of memory, it'll get killed since we run out of system memory as
+        # well.
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=self.memory)
         config = tf.ConfigProto(gpu_options=gpu_options)
 
@@ -176,10 +109,6 @@ class TFObjectDetector:
         self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
         self.num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
 
-    def model_input_dims(self):
-        """ Get desired model input dimensions """
-        return (self.model_input_width, self.model_input_height)
-
     def close(self):
         self.session.close()
 
@@ -190,9 +119,8 @@ class TFObjectDetector:
     def __exit__(self, type, value, traceback):
         self.close()
 
-    def process(self, image, image_np):
-        # Expand dimensions since the model expects images to have shape:
-        #   [1, None, None, 3]
+    def process(self, image_np):
+        # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
         image_np_expanded = np.expand_dims(image_np, axis=0)
 
         # Run detection
@@ -201,158 +129,89 @@ class TFObjectDetector:
                 self.detection_classes, self.num_detections],
             feed_dict={self.image_tensor: image_np_expanded})
 
-        # Make detection message
-        return detection_msg(image, boxes, scores, classes,
-            self.labels, self.min_score)
+        # Class label needs to be int32 or else publishing gives error
+        classes = classes.astype(np.int32)
 
-class TFLiteObjectDetector:
-    """
-    Object Detection with TensorFlow model trained with
-    models/research/object_detection (TF Lite version)
+        return boxes, scores, classes
 
-    Based on:
-    https://github.com/tensorflow/models/blob/master/research/object_detection/object_detection_tutorial.ipynb
+    def show(self, image_np, boxes, classes, scores, debug_image_size=(12,8)):
+        """
+        For debugging, show the image with the bounding boxes
+        """
+        vis_util.visualize_boxes_and_labels_on_image_array(
+            image_np,
+            np.squeeze(boxes),
+            np.squeeze(classes).astype(np.int32),
+            np.squeeze(scores),
+            self.category_index,
+            use_normalized_coordinates=True, line_thickness=8)
+        plt.figure(figsize=debug_image_size)
+        plt.imshow(image_np)
+        plt.show()
 
-    Usage:
-        d = TFLiteObjectDetector("path/to/model_file.tflite", "path/to/tf_label_map.pbtxt", 0.5)
-        detection_msg = d.process(image, image_np)
-    """
-    def __init__(self, model_file, labels_path, min_score):
-        # Prune based on score
-        self.min_score = min_score
+    def msgCOB(self, image, boxes, scores, classes):
+        """
+        Create the Object Detector message to publish with ROS
 
-        # TF Lite model
-        self.interpreter = interpreter_wrapper.Interpreter(model_path=model_file)
-        self.interpreter.allocate_tensors()
+        From:
+        https://github.com/cagbal/cob_people_object_detection_tensorflow/blob/master/src/cob_people_object_detection_tensorflow/utils.py
+        """
+        msg = DetectionArray()
+        msg.header = image.header
+        scores_above_threshold = np.where(scores > self.threshold)[1]
 
-        self.input_details = self.interpreter.get_input_details()
-        self.output_details = self.interpreter.get_output_details()
+        for s in scores_above_threshold:
+            # Get the properties
+            bb = boxes[0,s,:]
+            sc = scores[0,s]
+            cl = classes[0,s]
 
-        if self.input_details[0]['dtype'] == type(np.float32(1.0)):
-            self.floating_model = True
-        else:
-            self.floating_model = False
+            # Create the detection message
+            detection = Detection()
+            detection.header = image.header
+            detection.label = self.category_index[int(cl)]['name']
+            detection.id = cl
+            detection.score = sc
+            detection.detector = 'Tensorflow object detector'
+            detection.mask.roi.x = int((image.width-1) * bb[1])
+            detection.mask.roi.y = int((image.height-1) * bb[0])
+            detection.mask.roi.width = int((image.width-1) * (bb[3]-bb[1]))
+            detection.mask.roi.height = int((image.height-1) * (bb[2]-bb[0]))
 
-        # NxHxWxC, H:1, W:2
-        self.model_input_height = self.input_details[0]['shape'][1]
-        self.model_input_width = self.input_details[0]['shape'][2]
+            msg.detections.append(detection)
 
-        # Load label map
-        self.labels = load_labels(labels_path)
+        return msg
 
-    def model_input_dims(self):
-        """ Get desired model input dimensions """
-        return (self.model_input_width, self.model_input_height)
+    def msgDN(self, image, boxes, scores, classes):
+        """
+        Create the Object Detector message to publish with ROS
 
-    def process(self, image, image_np, input_mean=127.5, input_std=127.5):
-        # Normalize if floating point (but not if quantized)
-        if self.floating_model:
-            image_np = (np.float32(image_np) - input_mean) / input_std
+        This uses the Darknet BoundingBox[es] messages
+        """
+        msg = BoundingBoxes()
+        msg.header = image.header
+        scores_above_threshold = np.where(scores > self.threshold)[1]
 
-        # Expand dimensions since the model expects images to have shape:
-        #   [1, None, None, 3]
-        image_np_expanded = np.expand_dims(image_np, axis=0)
+        for s in scores_above_threshold:
+            # Get the properties
+            bb = boxes[0,s,:]
+            sc = scores[0,s]
+            cl = classes[0,s]
 
-        # Pass image to the network
-        self.interpreter.set_tensor(self.input_details[0]['index'], image_np_expanded)
+            # Create the bounding box message
+            detection = BoundingBox()
+            detection.Class = self.category_index[int(cl)]['name']
+            detection.probability = sc
+            detection.xmin = int((image.width-1) * bb[1])
+            detection.ymin = int((image.height-1) * bb[0])
+            detection.xmax = int((image.width-1) * bb[3])
+            detection.ymax = int((image.height-1) * bb[2])
 
-        # Run
-        self.interpreter.invoke()
+            msg.boundingBoxes.append(detection)
 
-        # Get results
-        detection_boxes = self.interpreter.get_tensor(self.output_details[0]['index'])
-        detection_classes = self.interpreter.get_tensor(self.output_details[1]['index'])
-        detection_scores = self.interpreter.get_tensor(self.output_details[2]['index'])
-        num_detections = self.interpreter.get_tensor(self.output_details[3]['index'])
+        return msg
 
-        num_detections = self.interpreter.get_tensor(self.output_details[3]['index'])
-
-        if not self.floating_model:
-            box_scale, box_mean = self.output_details[0]['quantization']
-            class_scale, class_mean = self.output_details[1]['quantization']
-
-            # If these are zero, then we end up setting all our results to zero
-            if box_scale != 0:
-                detection_boxes = (detection_boxes - box_mean * 1.0) * box_scale
-            if class_mean != 0:
-                detection_classes = (detection_classes - class_mean * 1.0) * class_scale
-
-        # Make detection message
-        return detection_msg(image,
-            detection_boxes, detection_scores, detection_classes,
-            self.labels, self.min_score)
-
-class ObjectDetectorBase:
-    """ Wrap detector to calculate FPS """
-    def __init__(self, model_file, labels_path, min_score=0.5, memory=0.5,
-            average_fps_frames=30, debug=True, lite=True):
-        self.debug = debug
-        self.lite = lite
-
-        if lite:
-            self.detector = TFLiteObjectDetector(model_file, labels_path,
-                min_score)
-        else:
-            self.detector = TFObjectDetector(model_file, labels_path,
-                min_score, memory)
-
-        # compute average FPS over # of frames
-        self.fps = deque(maxlen=average_fps_frames)
-
-        # compute streaming FPS (how fast frames are arriving from camera
-        # and we're able to process them, i.e. this is the actual FPS)
-        self.stream_fps = deque(maxlen=average_fps_frames)
-        self.process_end_last = 0
-
-    def open(self):
-        if not self.lite:
-            self.detector.open()
-
-    def __enter__(self):
-        self.open()
-        return self
-
-    def close(self):
-        if not self.lite:
-            self.detector.close()
-
-    def __exit__(self, type, value, traceback):
-        self.close()
-
-    def avg_fps(self):
-        """ Return average FPS over last so many frames (specified in constructor) """
-        return sum(list(self.fps))/len(self.fps)
-
-    def avg_stream_fps(self):
-        """ Return average streaming FPS over last so many frames (specified in constructor) """
-        return sum(list(self.stream_fps))/len(self.stream_fps)
-
-    def process(self, *args, **kwargs):
-        if self.debug:
-            # Start timer
-            fps = time.time()
-
-        detections = self.detector.process(*args, **kwargs)
-
-        if self.debug:
-            now = time.time()
-
-            # End timer
-            fps = 1/(now - fps)
-            self.fps.append(fps)
-
-            # Streaming FPS
-            stream_fps = 1/(now - self.process_end_last)
-            self.stream_fps.append(stream_fps)
-            self.process_end_last = now
-
-            print "Object Detection",
-                "Process FPS", "{:<5}".format("%.2f"%self.avg_fps()),
-                "Stream FPS", "{:<5}".format("%.2f"%self.avg_stream_fps())
-
-        return detections
-
-class ObjectDetectorNode(ObjectDetectorBase):
+class ObjectDetectorNode:
     """
     Subscribe to the images and publish object detection results with ROS
 
@@ -367,8 +226,9 @@ class ObjectDetectorNode(ObjectDetectorBase):
     with ObjectDetectorNode() as node:
         rospy.spin()
     """
-    def __init__(self):
+    def __init__(self, averageFPS=30):
         # We'll publish the results
+        #self.pub = rospy.Publisher('object_detector', DetectionArray, queue_size=10)
         self.pub = rospy.Publisher('object_detector', BoundingBoxes, queue_size=10)
 
         # Name this node
@@ -387,34 +247,68 @@ class ObjectDetectorNode(ObjectDetectorBase):
             self.pubImage = rospy.Publisher(
                     "/detection_image", Image, queue_size=1)
 
+        # Object Detector
+        self.detector = ObjectDetector(graph_path, labels_path, threshold, memory)
+        self.detector.open()
+
         # For processing images
         self.bridge = CvBridge()
+
+        # For computing average FPS over so many frames
+        self.fps = deque(maxlen=averageFPS)
 
         # Only create the subscriber after we're done loading everything
         self.sub = rospy.Subscriber(camera_namespace, Image, self.rgb_callback, queue_size=1, buff_size=2**24)
 
-        # Initialize object detector -- the base class with arguments from ROS
-        super().__init__(graph_path, labels_path, threshold, memory)
+    def __enter__(self):
+        pass
 
-    def image_msg(self, image_np, detection_msg):
+    def __exit__(self, type, value, traceback):
+        self.detector.close()
+
+    def avgFPS(self):
+        """
+        Return average FPS over last so many frames (specified in constructor)
+        """
+        return sum(list(self.fps))/len(self.fps)
+
+    def imageMsg(self, data, image_np, boxes, scores, classes):
         """
         Create the debug image with bounding boxes on it
         """
-        image_np = low_level_detection_show(image_np, detection_msg)
+        vis_util.visualize_boxes_and_labels_on_image_array(
+            image_np,
+            np.squeeze(boxes),
+            np.squeeze(classes).astype(np.int32),
+            np.squeeze(scores),
+            self.detector.category_index,
+            use_normalized_coordinates=True, line_thickness=8)
+
         return self.bridge.cv2_to_imgmsg(image_np, encoding="bgr8")
 
-    def rgb_callback(self, image):
+    def rgb_callback(self, data):
+        #print("Object Detection frame at %s" % rospy.get_time())
+        fps = time.time()
+        error = ""
+
         try:
-            # TODO do we need a resize here to 300x300?
-            image_np = self.bridge.imgmsg_to_cv2(image, "bgr8")
-            detection_msg = self.detector.process(image, image_np)
-            self.pub.publish(detection_msg)
+            image_np = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            boxes, scores, classes = self.detector.process(image_np)
+            #self.pub.publish(self.detector.msgCOB(data, boxes, scores, classes))
+            self.pub.publish(self.detector.msgDN(data, boxes, scores, classes))
 
             if self.debugImage:
-                img_msg = self.image_msg(image, image_np, detection_msg)
-                self.pubImage.publish(img_msg)
+                self.pubImage.publish(self.imageMsg(data, image_np, boxes, scores, classes))
         except CvBridgeError as e:
             rospy.logerr(e)
+            error = "(error)"
+
+        # Print FPS
+        fps = 1/(time.time() - fps)
+        self.fps.append(fps)
+        print "Object Detection FPS", "{:<5}".format("%.2f"%fps), \
+                "Average", "{:<5}".format("%.2f"%self.avgFPS()), \
+                error
 
 def findFiles(folder, prefix="rgb", extension=".png"):
     """
@@ -432,56 +326,41 @@ def findFiles(folder, prefix="rgb", extension=".png"):
 
     return files
 
-class DummyImageMsg:
-    """ Allow for using same functions as in the ROS code to get width/height
-    and header from some ROS image message """
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-        self.header = ""
+def test(model, root="../networks"):
+    """
+    Run the object detection on a test set of images
+    """
+    # Model
+    graph = os.path.join(root, model)
+    labels = os.path.join(root, "tf_label_map.pbtxt")
 
-class OfflineObjectDetector(ObjectDetectorBase):
-    """ Run object detection on already captured images """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # Test images
+    testDir = os.path.join(root, "test_images")
+    testImages = [os.path.join(d, f) for d, f in findFiles(testDir)]
+    images = []
 
-    def run(self, test_image_dir, show_image=True):
-        test_images = [os.path.join(d, f) for d, f in find_files(test_image_dir)]
+    # We need to get this out of the inner loop since it's really slow
+    for img in testImages:
+        images.append(load_image_into_numpy_array(Image.open(img)))
 
-        try:
-            for i, filename in enumerate(test_images):
-                orig_img = Image.open(filename)
+    with ObjectDetector(graph, labels) as detector:
+        fps = time.time()
 
-                if orig_img.size == self.detector.model_input_dims():
-                    orig_img = load_image_into_numpy_array(orig_img)
-                    resize_img = orig_img
-                else:
-                    resize_img = orig_img.resize(self.detector.model_input_dims())
-                    orig_img = load_image_into_numpy_array(orig_img)
-                    resize_img = load_image_into_numpy_array(resize_img)
+        for img in images:
+            boxes, scores, classes, number = detector.process(img)
+            detector.show(img, boxes, scores, classes)
 
-                img = DummyImageMsg(orig_img.shape[1], orig_img.shape[0])
-                detection_msg = self.process(img, resize_img)
-
-                if self.debug:
-                    for i, d in enumerate(detection_msg):
-                        print "Result "+str(i)+":", d
-
-                detection_show(orig_img, detection_msg, show_image)
-        except KeyboardInterrupt:
-            pass
+        # Calculate overall FPS
+        fps = len(testImages)/(time.time() - fps)
+        print "Note, first frame is always really slow..."
+        print "Overall FPS", fps
 
 if __name__ == '__main__':
-    offline = False
+    try:
+        with ObjectDetectorNode() as node:
+            rospy.spin()
+    except rospy.ROSInterruptException:
+        pass
 
-    if offline:
-        model = "../networks/ssd_mobilenet_v1.pb"
-        labels = "../networks/labels.txt"
-        with OfflineObjectDetector(model, labels, lite=False) as d:
-            d.run("test_images", show_image=True)
-    else:
-        try:
-            with ObjectDetectorNode() as node:
-                rospy.spin()
-        except rospy.ROSInterruptException:
-            pass
+    #test("ssd_mobilenet_v1.pb")
+    #test("ssd_inception_v2.pb")
